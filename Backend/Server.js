@@ -24,7 +24,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-const PORT = process.env.Port;
+const PORT = 4000;
 app.listen(PORT, () => {
     console.log(`I am running on http://localhost:${PORT}`);
 });

@@ -102,7 +102,16 @@ exports.addRestaurant = [
             });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: 'Error adding restaurant' });
+            if (error.message.includes('Slot')) {
+                return res.status(400).json({ message: `Invalid slot configuration: ${error.message}` });
+            }
+            if (error.message.includes('Invalid date format')) {
+                return res.status(400).json({ message: 'One or more slots have an invalid date format.' });
+            }
+            if (error.message.includes('overlaps')) {
+                return res.status(400).json({ message: 'One or more slots overlap with existing slots.' });
+            }
+            res.status(500).json({ message: 'Error adding restaurant. Please check the provided data.' });
         }
     }
 ];

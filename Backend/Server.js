@@ -14,6 +14,7 @@ scheduleReminders();
 
 app.use(bodyParser.json());
 
+app.set('trust proxy', true);
 app.use('/api/', userRoutes);
 app.use('/api/', resturantRoutes);
 app.use('/', paypalRoutes);

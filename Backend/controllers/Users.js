@@ -39,6 +39,7 @@ exports.registerUser = async (req, res) => {
         newUser.password = await bcrypt.hash(password, SaltRounds);
 
         await newUser.save();
+        console.log(newUser)
 
         res.status(201).json({
             message: 'Userinfo saved successfully',
@@ -78,6 +79,7 @@ exports.loginUser = async (req, res) => {
             message: 'Login successful',
             token
         });
+        console.log(user.email,user.password,user.role)
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Something went wrong while logging in user' });

@@ -33,17 +33,46 @@ exports.addRestaurant = [
         const { name, address, location, cuisine, rating, availableSlots, imageUrl } = req.body;
 
         if (!name || !cuisine || !rating || !location) {
-            return res.status(400).json({ message: 'Name, cuisine,location and rating are required' });
+            return res.status(400).json({ message: 'Name, cuisine, location, and rating are required' });
         }
 
         try {
             let processedSlots = [];
             if (availableSlots && Array.isArray(availableSlots)) {
-                processedSlots = availableSlots.map(slot => ({
-                    startTime: new Date(slot.startTime),
-                    endTime: new Date(slot.endTime),
-                    isAvailable: slot.isAvailable !== undefined ? slot.isAvailable : true,
-                }));
+                processedSlots = availableSlots.map((slot, index) => {
+                    const { startTime, endTime, isAvailable } = slot;
+
+                    if (!startTime || !endTime) {
+                        throw new Error(`Slot at index ${index} is missing startTime or endTime.`);
+                    }
+
+                    const start = new Date(startTime);
+                    const end = new Date(endTime);
+                    if (isNaN(start) || isNaN(end)) {
+                        throw new Error(`Invalid date format for slot at index ${index}.`);
+                    }
+
+                    if (start >= end) {
+                        throw new Error(`startTime must be before endTime for slot at index ${index}.`);
+                    }
+
+                    return {
+                        startTime: start,
+                        endTime: end,
+                        isAvailable: isAvailable !== undefined ? isAvailable : true,
+                    };
+                });
+
+                processedSlots.sort((a, b) => a.startTime - b.startTime);
+
+                for (let i = 1; i < processedSlots.length; i++) {
+                    const currentSlot = processedSlots[i];
+                    const previousSlot = processedSlots[i - 1];
+
+                    if (currentSlot.startTime < previousSlot.endTime) {
+                        throw new Error(`Slot at index ${i} overlaps with the previous slot.`);
+                    }
+                }
             }
 
             const newRestaurant = new Restaurant({
@@ -98,15 +127,55 @@ exports.updateRestaurant = [
             if (imageUrl) restaurant.imageUrl = imageUrl;
 
             if (availableSlots) {
-                if (Array.isArray(availableSlots)) {
-                    restaurant.availableSlots = availableSlots.map(slot => ({
-                        startTime: new Date(slot.startTime),
-                        endTime: new Date(slot.endTime),
-                        isAvailable: slot.isAvailable !== undefined ? slot.isAvailable : true,
-                    }));
-                } else {
+                if (!Array.isArray(availableSlots)) {
                     return res.status(400).json({ message: 'Invalid availableSlots format. Must be an array.' });
                 }
+
+                let processedSlots = [];
+                let overlappingSlots = false;
+
+                for (let index = 0; index < availableSlots.length; index++) {
+                    const { startTime, endTime, isAvailable } = availableSlots[index];
+                    
+
+                    if (!startTime || !endTime) {
+                        return res.status(400).json({ message: `Slot at index ${index} is missing startTime or endTime.` });
+                    }
+    
+                    const start = new Date(startTime);
+                    const end = new Date(endTime);
+ 
+                    if (isNaN(start) || isNaN(end)) {
+                        return res.status(400).json({ message: `Invalid date format for slot at index ${index}.` });
+                    }
+
+                
+                    if (start >= end) {
+                        return res.status(400).json({ message: `startTime must be before endTime for slot at index ${index}.` });
+                    }
+
+                    for (const slot of processedSlots) {
+                        if (
+                            (start < slot.endTime && end > slot.startTime) || 
+                            (end > slot.startTime && start < slot.endTime)     
+                        ) {
+                            overlappingSlots = true;
+                            break;
+                        }
+                    }
+
+                    if (overlappingSlots) {
+                        return res.status(400).json({ message: `Slot at index ${index} overlaps with an existing slot.` });
+                    }
+
+                    processedSlots.push({
+                        startTime: start,
+                        endTime: end,
+                        isAvailable: isAvailable !== undefined ? isAvailable : true,
+                    });
+                }
+
+                restaurant.availableSlots = processedSlots;
             }
 
             await restaurant.save();

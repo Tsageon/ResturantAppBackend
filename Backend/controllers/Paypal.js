@@ -1,9 +1,29 @@
 const express = require('express');
 const mongoose = require('mongoose'); 
 const Reservation = require('../model/Reservations');
+const Restaurant = require('../model/Resturant');
 const paypalClient = require('../config/paypal'); 
 const authMiddleware = require('./Auth')
 const router = express.Router();
+
+router.get('/reservations', authMiddleware, async (req, res) => {
+    const { userId } = req; 
+
+    try {
+        const reservations = await Reservation.find({ userId: userId })
+            .populate('userId')
+            .populate('restaurantId');
+
+        if (reservations.length === 0) {
+            return res.status(404).json({ message: 'No reservations found' });
+        }
+
+        res.json(reservations);
+    } catch (error) {
+        console.error('Error fetching reservations:', error);
+        res.status(500).json({ message: 'Failed to fetch reservations' });
+    }
+});
 
 router.get('/reservation/:id', authMiddleware, async (req, res) => {
     const { id } = req.params;
@@ -81,40 +101,54 @@ router.post('/reservation', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/payment/success', async (req, res) => {
-    const { paymentId, PayerID } = req.query;
+router.put('/reservation/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { startTime, endTime, amount } = req.body;
 
-    if (!paymentId || !PayerID) {
-        return res.status(400).json({ message: 'Payment details are missing' });
+    if (!startTime || !endTime || !amount) {
+        return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    if (new Date(startTime) >= new Date(endTime)) {
+        return res.status(400).json({ message: 'Start time must be before end time' });
     }
 
     try {
-        const executePaymentJson = { payer_id: PayerID };
+        const reservation = await Reservation.findById(id);
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
 
-        paypalClient.payment.execute(paymentId, executePaymentJson, async (error, payment) => {
-            if (error) {
-                console.error('Error capturing PayPal payment:', error);
-                return res.status(500).json({ message: 'Payment capture failed' });
-            }
+        const restaurant = await Restaurant.findById(reservation.restaurantId);
+        const availableSlot = restaurant.availableSlots.find(slot => 
+            new Date(slot.startTime).getTime() === new Date(startTime).getTime() &&
+            new Date(slot.endTime).getTime() === new Date(endTime).getTime() && 
+            slot.status === true
+        );
 
-            const reservationId = payment.transactions[0].custom;
+        if (!availableSlot) {
+            return res.status(400).json({ message: 'The selected time slot is not available' });
+        }
 
-            const reservation = await Reservation.findByIdAndUpdate(
-                reservationId, 
-                { status: 'confirmed' }, 
-                { new: true }
-            );
-            console.log('Payment Successful:', payment);
-            console.log('Reservation updated:', reservation);
-            res.json({ message: 'Payment successful', payment, reservation });
+        reservation.startTime = new Date(startTime);
+        reservation.endTime = new Date(endTime);
+        reservation.amount = amount;
+        reservation.status = 'pending'; 
+
+        availableSlot.status = false;
+
+        await restaurant.save();
+        await reservation.save();
+
+        res.status(200).json({
+            message: 'Reservation updated successfully',
+            reservation
         });
     } catch (error) {
-        console.error('Error handling payment success:', error);
-        res.status(500).json({ message: 'Payment success handling failed' });
+        console.error('Error updating reservation:', error);
+        res.status(500).json({ message: 'Failed to update reservation' });
     }
 });
-
-
 
 router.post('/pay', authMiddleware, async (req, res) => {
     const { reservationId, amount } = req.body;
@@ -178,6 +212,40 @@ router.post('/pay', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Payment initiation failed' });
     }
 });
+
+router.get('/payment/success', async (req, res) => {
+    const { paymentId, PayerID } = req.query;
+
+    if (!paymentId || !PayerID) {
+        return res.status(400).json({ message: 'Payment details are missing' });
+    }
+
+    try {
+        const executePaymentJson = { payer_id: PayerID };
+
+        paypalClient.payment.execute(paymentId, executePaymentJson, async (error, payment) => {
+            if (error) {
+                console.error('Error capturing PayPal payment:', error);
+                return res.status(500).json({ message: 'Payment capture failed' });
+            }
+
+            const reservationId = payment.transactions[0].custom;
+
+            const reservation = await Reservation.findByIdAndUpdate(
+                reservationId, 
+                { status: 'confirmed' }, 
+                { new: true }
+            );
+            console.log('Payment Successful:', payment);
+            console.log('Reservation updated:', reservation);
+            res.json({ message: 'Payment successful', payment, reservation });
+        });
+    } catch (error) {
+        console.error('Error handling payment success:', error);
+        res.status(500).json({ message: 'Payment success handling failed' });
+    }
+});
+
 
 router.get('/payment/cancel', async (req, res) => {
     try {

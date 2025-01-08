@@ -1,6 +1,8 @@
 const NOTIFICATION_INTERVALS = [30 * 60 * 1000, 10 * 60 * 1000]; 
 const schedule = require('node-schedule');
+const cron = require('node-cron');
 const Reservation = require('../model/Reservations');
+const Restaurant = require('../model/Resturant');
 const sendPushNotification = require('../controllers/Notification');
 
 const scheduleReminders = () => {
@@ -9,12 +11,17 @@ const scheduleReminders = () => {
 
         try {
             const reservations = await Reservation.find({
-                date: { $gte: now },
+                startTime: { $gte: now },
                 status: 'confirmed',
             }).populate('userId');
 
             for (const reservation of reservations) {
-                const timeToReservation = reservation.date.getTime() - now.getTime();
+                if (!(reservation.startTime instanceof Date) || isNaN(reservation.startTime.getTime())) {
+                    console.error('Invalid reservation start time:', reservation);
+                    continue;
+                }
+
+                const timeToReservation = reservation.startTime.getTime() - now.getTime();
 
                 for (const interval of NOTIFICATION_INTERVALS) {
                     if (timeToReservation <= interval && !isNotificationSent(reservation, interval)) {
@@ -82,5 +89,30 @@ const retryNotification = async (reservation, interval, deviceToken, title, body
         }
     });
 };
+
+const updateSlotAvailability = async () => {
+    try {
+        const restaurants = await Restaurant.find({});
+        const currentDate = new Date();
+
+        for (let restaurant of restaurants) {
+            for (let slot of restaurant.availableSlots) {
+                if (new Date(slot.endTime) < currentDate && slot.status === false) {
+                    slot.status = true;
+                }
+            }
+            await restaurant.save();
+        }
+        console.log('Slot availability updated successfully');
+    } catch (error) {
+        console.error('Error updating slot availability:', error);
+    }
+};
+
+
+cron.schedule('0 * * * *', () => {
+    console.log('Updating slot availability...');
+    updateSlotAvailability();
+});
 
 module.exports = scheduleReminders;

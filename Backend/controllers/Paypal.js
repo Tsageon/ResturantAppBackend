@@ -28,24 +28,47 @@ router.get('/reservation/:id', authMiddleware, async (req, res) => {
 
 router.post('/reservation', authMiddleware, async (req, res) => {
     const { userId } = req;  
-    const { restaurantId, date, amount } = req.body;  
+    const { restaurantId, startTime, endTime, amount } = req.body;  
 
-    if (!restaurantId || !date || !amount) {
+    if (!restaurantId || !startTime || !endTime || !amount) {
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    if (new Date(startTime) >= new Date(endTime)) {
+        return res.status(400).json({ message: 'Start time must be before end time' });
+    }
+
     try {
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+
+        const availableSlot = restaurant.availableSlots.find(slot => 
+            new Date(slot.startTime).getTime() === new Date(startTime).getTime() &&
+            new Date(slot.endTime).getTime() === new Date(endTime).getTime() && 
+            slot.status === true
+        );
+
+
+        if (!availableSlot) {
+            return res.status(400).json({ message: 'The selected time slot is not available' });
+        }
+
         const newReservation = new Reservation({
             userId,  
             restaurantId, 
-            date,  
+            startTime: new Date(startTime), 
+            endTime: new Date(endTime),
             amount, 
-            status: 'pending'  
+            status: 'pending'
         });
         console.log(amount)
+        availableSlot.status = false;
         
-
+        await restaurant.save();
         await newReservation.save();
+        
         console.log(newReservation)
 
         res.status(201).json({

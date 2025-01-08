@@ -179,8 +179,30 @@ router.post('/pay', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/payment/cancel', (req, res) => {
-    res.status(400).json({ message: 'Payment was canceled' });
+router.get('/payment/cancel', async (req, res) => {
+    try {
+        const reservationId = req.query.reservationId;
+        const reservation = await Reservation.findById(reservationId);
+        
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+
+        reservation.status = 'canceled';
+        await reservation.save();
+
+        const restaurant = await Restaurant.findById(reservation.restaurantId);
+        const slot = restaurant.availableSlots.find(slot => slot._id.toString() === reservation.slotId.toString());
+        if (slot) {
+            slot.status = true; 
+            await restaurant.save();
+        }
+
+        res.status(200).json({ message: 'Reservation canceled and slot made available' });
+    } catch (error) {
+        console.error('Error canceling reservation:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 

@@ -30,10 +30,12 @@ const checkReservations = async () => {
 
         for (const reservation of reservations) {
             const now = new Date();
-            const reservationTime = new Date(reservation.date);
-            const timeDiff = reservationTime - now;
+            const reservationStartTime = new Date(reservation.startTime);
+            const reservationEndTime = new Date(reservation.endTime);
+            const timeDiffToStart = reservationStartTime - now;
+            const timeDiffToEnd = reservationEndTime - now;
 
-            if (timeDiff <= 30 * 60 * 1000 && timeDiff > 0) {
+            if (timeDiffToStart <= 30 * 60 * 1000 && timeDiffToStart > 0) {
                 const user = await User.findById(reservation.userId);
                 
                 if (user) {
@@ -58,6 +60,20 @@ const checkReservations = async () => {
                     clearInterval(intervalID);
                     console.log('Stopped checking reservations after sending follow-up email.');
                 }
+            }
+
+            if (timeDiffToEnd <= 0 && reservation.status !== 'arrived') {
+                const restaurant = await Restaurant.findById(reservation.restaurantId);
+                const slot = restaurant.availableSlots.find(slot => slot._id.toString() === reservation.slotId.toString());
+                
+                if (slot) {
+                    slot.status = true; 
+                    await restaurant.save();
+                    console.log(`Slot for reservation ${reservation._id} made available.`);
+                }
+
+                reservation.status = 'expired';
+                await reservation.save();
             }
         }
     } catch (error) {

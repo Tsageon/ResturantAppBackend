@@ -7,11 +7,11 @@ const connectDB = async () => {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
-        console.log(`MongoDB connected to cluster: ${mongoose.connection.host}`);  
-     } catch (error) {
-       console.error('MongoDB connection failed:', error.message); 
-       process.exit(1);
-        
+        console.log(`MongoDB connected to cluster: ${mongoose.connection.host}`);
+    } catch (error) {
+        console.error('MongoDB connection failed:', error.message);
+        process.exit(1);
+
     }
 };
 

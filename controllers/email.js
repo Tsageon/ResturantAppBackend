@@ -8,4 +8,22 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-module.exports = transporter;
+const sendEmail = async (to, subject, text, html) => {
+    try {
+        const info = await transporter.sendMail({
+            from: `"Reservation Notification" <${process.env.EMAIL_USER}>`,
+            to, 
+            subject, 
+            text, 
+            html,
+        });
+
+        console.log('Message sent: %s', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('Error sending email:', error);
+        return false;
+    }
+};
+
+module.exports = {transporter, sendEmail};

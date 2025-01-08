@@ -7,7 +7,8 @@ const restaurantSchema = new mongoose.Schema({
         coordinates: [Number]},
     cuisine: { type: String, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
-    availableSlots: [{ type: Date }],
+    availableSlots: [{ startTime: Date,  endTime: Date,  
+                       isAvailable: { type: Boolean, default: true },}],
     imageUrl:{type: String },
     createdAt: { type: Date, default: Date.now },
 });

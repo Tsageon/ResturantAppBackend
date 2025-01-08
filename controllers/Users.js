@@ -1,47 +1,49 @@
 const User = require('../model/User');
 const bcrypt = require('bcrypt');
+const { sendEmail } = require('./email')
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const transporter = require('../controllers/email'); 
+const Reservation = require('../model/Reservations');
+const transporter = require('../controllers/email');
 const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 
 exports.registerUser = async (req, res) => {
-    const {email, password, phonenumber, fullname, role } = req.body;
-    
+    const { email, password, phonenumber, fullname, role } = req.body;
+
     try {
-        const existingUser = await User.findOne({email});
-     if (existingUser) {
-        return res.status(400).json({ message: 'Email already being used' });
-    }
-    
-    let userRole = 'user';
-
-    if (email === process.env.ADMIN_EMAIL) {
-        const adminPassword = process.env.ADMIN_PASSWORD
-        if (password !== adminPassword) {
-            return res.status(400).json({ message: 'Invalid/incorrect admin password' });
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email already being used' });
         }
-        userRole = 'admin';
-    }
 
-    const newUser = new User({
-        email,
-        password,
-        fullname,
-        phonenumber,
-        role: role || userRole
-    })
+        let userRole = 'user';
 
-    const SaltRounds = 10;
-    newUser.password = await bcrypt.hash(password, SaltRounds);
+        if (email === process.env.ADMIN_EMAIL) {
+            const adminPassword = process.env.ADMIN_PASSWORD
+            if (password !== adminPassword) {
+                return res.status(400).json({ message: 'Invalid/incorrect admin password' });
+            }
+            userRole = 'admin';
+        }
 
-    await newUser.save();
+        const newUser = new User({
+            email,
+            password,
+            fullname,
+            phonenumber,
+            role: role || userRole
+        })
 
-    res.status(201).json({
-        message: 'Userinfo saved successfully',
-        user: { email: newUser.email, fullname: newUser.fullname, role: newUser.role, phonenumber: newUser.phonenumber}
-    })
+        const SaltRounds = 10;
+        newUser.password = await bcrypt.hash(password, SaltRounds);
+
+        await newUser.save();
+
+        res.status(201).json({
+            message: 'Userinfo saved successfully',
+            user: { email: newUser.email, fullname: newUser.fullname, role: newUser.role, phonenumber: newUser.phonenumber }
+        })
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error registering user' });
@@ -112,19 +114,19 @@ exports.forgotPassword = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found with the provided email' });
         }
-        
+
         const resetToken = crypto.randomBytes(32).toString('hex');
 
         const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
         user.resetPasswordToken = hashedToken;
-        user.resetPasswordExpires = Date.now() + 3600000; 
+        user.resetPasswordExpires = Date.now() + 3600000;
 
         await user.save();
 
         const resetURL = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
 
         const mailOptions = {
-            from: process.env.EMAIL_FROM, 
+            from: process.env.EMAIL_FROM,
             to: user.email,
             subject: 'Password Reset Request',
             text: `You requested a password reset. Click the link below to reset your password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`,
@@ -173,6 +175,7 @@ exports.resetPassword = async (req, res) => {
 
 exports.updateUser = [
     authMiddleware,
+    adminCheck,
     async (req, res) => {
         const userId = req.userId;
         const { email, password, fullname, role, phonenumber } = req.body;
@@ -222,19 +225,19 @@ exports.updateUser = [
 ];
 
 exports.deleteUser = [
-    authMiddleware,
+    authMiddleware, adminCheck,
     async (req, res) => {
         const userId = req.userId;
-        const {id} = req.params;
+        const { id } = req.params;
 
         try {
-            if(req.userRole === 'admin') {
+            if (req.userRole === 'admin') {
                 const userToDelete = await User.findById(id);
                 if (!userToDelete) {
                     return res.status(404).json({ message: 'User not found' });
                 }
                 await userToDelete.remove();
-                return res.status(403).jsn({message: 'user account deleted successfully'})
+                return res.status(403).jsn({ message: 'user account deleted successfully' })
             }
             if (userId.toString() !== id) {
                 return res.status(403).json({ message: 'Only admins can delete other Users' });
@@ -245,7 +248,40 @@ exports.deleteUser = [
             }
         } catch (error) {
             console.error(error);
-            res.status(500).json({message: 'something went wrong while deleting the user'})
+            res.status(500).json({ message: 'something went wrong while deleting the user' })
+        }
+    }
+];
+
+exports.manualSendNotification = [
+    authMiddleware,
+    async (req, res) => {
+        const { reservationId } = req.body;
+
+        try {
+            const reservation = await Reservation.findById(reservationId);
+
+            if (!reservation) {
+                return res.status(404).json({ message: 'Reservation not found' });
+            }
+
+            const user = await User.findById(reservation.userId);
+
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const email = user.email;
+            const subject = 'Manual Reservation Reminder';
+            const text = `Your reservation at the restaurant is coming up soon. Please get ready!`;
+            const html = `<p>Your reservation at the restaurant is coming up soon. Please get ready!</p>`;
+
+            await sendEmail(email, subject, text, html);
+
+            res.status(200).json({ message: `Manual notification sent to ${email}` });
+        } catch (error) {
+            console.error('Error sending manual notification:', error);
+            res.status(500).json({ message: 'Failed to send manual notification' });
         }
     }
 ];

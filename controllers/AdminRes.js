@@ -1,4 +1,4 @@
-const Restaurant = require('../model/Restaurant');
+const Restaurant = require('../model/Resturant');
 const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 
@@ -28,24 +28,32 @@ exports.getRestaurantById = async (req, res) => {
 };
 
 exports.addRestaurant = [
-    authMiddleware, 
-    adminCheck, 
+    authMiddleware,
     async (req, res) => {
         const { name, address, location, cuisine, rating, availableSlots, imageUrl } = req.body;
 
-        if (!name || !cuisine || !rating ||!location) {
+        if (!name || !cuisine || !rating || !location) {
             return res.status(400).json({ message: 'Name, cuisine,location and rating are required' });
         }
 
         try {
+            let processedSlots = [];
+            if (availableSlots && Array.isArray(availableSlots)) {
+                processedSlots = availableSlots.map(slot => ({
+                    startTime: new Date(slot.startTime),
+                    endTime: new Date(slot.endTime),
+                    isAvailable: slot.isAvailable !== undefined ? slot.isAvailable : true,
+                }));
+            }
+
             const newRestaurant = new Restaurant({
                 name,
                 address,
-                location, 
+                location,
                 cuisine,
                 rating,
-                availableSlots,
-                imageUrl  
+                availableSlots: processedSlots,
+                imageUrl
             });
 
             await newRestaurant.save();
@@ -53,8 +61,10 @@ exports.addRestaurant = [
             res.status(201).json({
                 message: 'Restaurant added successfully',
                 restaurant: {
+                    id: newRestaurant._id,
                     name: newRestaurant.name,
                     address: newRestaurant.address,
+                    location: newRestaurant.location,
                     cuisine: newRestaurant.cuisine,
                     rating: newRestaurant.rating,
                     availableSlots: newRestaurant.availableSlots,
@@ -69,8 +79,7 @@ exports.addRestaurant = [
 ];
 
 exports.updateRestaurant = [
-    authMiddleware, 
-    adminCheck, 
+    authMiddleware,
     async (req, res) => {
         const { id } = req.params;
         const { name, address, location, cuisine, rating, availableSlots, imageUrl } = req.body;
@@ -86,8 +95,19 @@ exports.updateRestaurant = [
             if (location) restaurant.location = location;
             if (cuisine) restaurant.cuisine = cuisine;
             if (rating) restaurant.rating = rating;
-            if (availableSlots) restaurant.availableSlots = availableSlots;
             if (imageUrl) restaurant.imageUrl = imageUrl;
+
+            if (availableSlots) {
+                if (Array.isArray(availableSlots)) {
+                    restaurant.availableSlots = availableSlots.map(slot => ({
+                        startTime: new Date(slot.startTime),
+                        endTime: new Date(slot.endTime),
+                        isAvailable: slot.isAvailable !== undefined ? slot.isAvailable : true,
+                    }));
+                } else {
+                    return res.status(400).json({ message: 'Invalid availableSlots format. Must be an array.' });
+                }
+            }
 
             await restaurant.save();
             res.status(200).json({
@@ -102,8 +122,8 @@ exports.updateRestaurant = [
 ];
 
 exports.deleteRestaurant = [
-    authMiddleware, 
-    adminCheck, 
+    authMiddleware,
+    adminCheck,
     async (req, res) => {
         const { id } = req.params;
 

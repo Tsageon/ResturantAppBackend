@@ -1,5 +1,4 @@
 const Review = require('../model/Review');
-const User = require('../model/User');
 const Restaurant = require('../model/Resturant');
 const authMiddleware = require('./Auth');
 

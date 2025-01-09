@@ -12,18 +12,20 @@ exports.getAllRestaurants = async (req, res) => {
         const timezone = req.timezone || 'UTC';
         console.log('Using timezone:', timezone);
 
-        const restaurants = await Restaurant.find().lean(); 
+        const restaurants = await Restaurant.find(); 
 
         const formattedRestaurants = restaurants.map(restaurant => {
             const originalCreatedAt = restaurant.createdAt;
             console.log('UTC createdAt:', originalCreatedAt);
-            restaurant.createdAt = moment(originalCreatedAt).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
-            console.log('Converted time:', moment(restaurant.createdAt).tz(timezone).format());
 
+            restaurant.createdAt = moment(originalCreatedAt).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
+            console.log('Converted time:', restaurant.createdAt);
+        
             restaurant.availableSlots.forEach(slot => {
                 if (slot.startTime) {
                     const originalStartTime = slot.startTime;  
                     console.log('Original startTime (UTC):', originalStartTime);
+ 
                     slot.startTime = moment(originalStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
                     console.log("Converted startTime:", slot.startTime); 
                 }
@@ -34,9 +36,9 @@ exports.getAllRestaurants = async (req, res) => {
                     console.log("Converted endTime:", slot.endTime); 
                 }
             });
-
+        
             return restaurant;
-        });
+        });        
 
         res.status(200).json({ restaurants: formattedRestaurants });
     } catch (error) {

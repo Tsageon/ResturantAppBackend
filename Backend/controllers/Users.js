@@ -86,6 +86,16 @@ exports.loginUser = async (req, res) => {
     }
 };
 
+exports.logoutUser = (req, res) => {
+    try {
+        res.status(200).json({ message: 'Logout successful' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Something went wrong while logging out' });
+    }
+};
+
+
 
 exports.getUser = async (req, res) => {
     const userId = req.userId;

@@ -4,7 +4,6 @@ const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 const timezoneMiddleware = require('./TimeZ');
 
-app.use(timezoneMiddleware);
 
 exports.getAllRestaurants = async (req, res) => {
     try {

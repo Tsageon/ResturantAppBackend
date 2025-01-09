@@ -13,18 +13,22 @@ exports.getAllRestaurants = async (req, res) => {
         const restaurants = await Restaurant.find();
 
         const formattedRestaurants = restaurants.map(restaurant => {
-            restaurant.createdAt = moment(restaurant.createdAt).local().format(); 
+            console.log('Timezone:', timezone);
+            console.log(moment.tz.names());
+            console.log(moment.tz("2025-01-16T10:08:00.000Z", 'Africa/Johannesburg').format());
             console.log('Original createdAt:', restaurant.createdAt);
-
+            restaurant.createdAt = moment.utc(restaurant.createdAt).tz(timezone).format();
+            console.log('Converted createdAt:', restaurant.createdAt); 
+            
             restaurant.availableSlots.forEach(slot => {
                 if (slot.startTime) {
                     console.log("Original startTime:", slot.startTime); 
-                    slot.startTime = moment(slot.startTime).tz(timezone).format();
+                    slot.startTime = moment.utc(slot.startTime).tz(timezone).format();
                     console.log("Converted startTime:", slot.startTime); 
                 }
                 if (slot.endTime) {
                     console.log("Original endTime:", slot.endTime); 
-                    slot.endTime = moment(slot.endTime).tz(timezone).format();
+                    slot.endTime = moment.utc(slot.endTime).tz(timezone).format();
                     console.log("Converted endTime:", slot.endTime); 
                 }
             });

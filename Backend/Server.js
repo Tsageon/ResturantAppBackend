@@ -19,6 +19,11 @@ app.use('/api/', userRoutes);
 app.use('/api/', resturantRoutes);
 app.use('/', paypalRoutes);
 
+app.use((req, res, next) => {
+    console.log(`Client IP: ${req.ip}`);
+    next();
+});
+
 app.use((err, req, res, next) => {
     res.status(err.status || 500).json({
         message: err.message || 'An unexpected error occurred',

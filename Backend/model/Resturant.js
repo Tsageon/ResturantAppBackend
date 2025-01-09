@@ -20,7 +20,7 @@ const restaurantSchema = new mongoose.Schema({
     availableSlots: [{ startTime: Date,  endTime: Date,  
                        isAvailable: { type: Boolean, default: true },
                        status: { type: Boolean, default: true }}],
-                       imageUrl: {
+    imageUrl: {
                         type: String,
                         validate: {
                             validator: function (url) {

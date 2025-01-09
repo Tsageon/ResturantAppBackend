@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Restaurant = require('../model/Resturant');
 const Reservation = require('../model/Reservations');
-const timezoneMiddleware = require('./middleware/timezoneMiddleware');
+const timezoneMiddleware = require('../controllers/TimeZ');
 const { getAllRestaurants, getRestaurantById, addRestaurant, updateRestaurant, deleteRestaurant } = require('../controllers/AdminRes');
 
 router.post('/addR', addRestaurant);

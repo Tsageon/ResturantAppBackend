@@ -13,14 +13,19 @@ exports.getAllRestaurants = async (req, res) => {
         const restaurants = await Restaurant.find();
 
         const formattedRestaurants = restaurants.map(restaurant => {
-            restaurant.createdAt = moment(restaurant.createdAt).tz(timezone).format();
+            restaurant.createdAt = moment(restaurant.createdAt).local().format(); 
+            console.log('Original createdAt:', restaurant.createdAt);
 
             restaurant.availableSlots.forEach(slot => {
                 if (slot.startTime) {
+                    console.log("Original startTime:", slot.startTime); 
                     slot.startTime = moment(slot.startTime).tz(timezone).format();
+                    console.log("Converted startTime:", slot.startTime); 
                 }
                 if (slot.endTime) {
+                    console.log("Original endTime:", slot.endTime); 
                     slot.endTime = moment(slot.endTime).tz(timezone).format();
+                    console.log("Converted endTime:", slot.endTime); 
                 }
             });
 
@@ -123,6 +128,7 @@ exports.addRestaurant = [
                     imageUrl: newRestaurant.imageUrl
                 }
             });
+
         } catch (error) {
             console.error(error);
             if (error.message.includes('Slot')) {
@@ -135,9 +141,7 @@ exports.addRestaurant = [
                 return res.status(400).json({ message: 'One or more slots overlap with existing slots.' });
             }
             res.status(500).json({ message: 'Error adding restaurant. Please check the provided data.' });
-        }
-    }
-];
+        }}];
 
 
 exports.updateRestaurant = [

@@ -9,25 +9,28 @@ console.log(testDate.tz('Yahhhh:Africa/Johannesburg').format());
 
 exports.getAllRestaurants = async (req, res) => {
     try {
-        const timezone = req.timezone;
+        const timezone = req.timezone || 'UTC';
         console.log('Using timezone:', timezone);
 
         const restaurants = await Restaurant.find();
 
         const formattedRestaurants = restaurants.map(restaurant => {
-            console.log('UTC time:', moment.utc(restaurant.createdAt).format());
-            restaurant.createdAt = moment(restaurant.createdAt).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
+            const originalCreatedAt = restaurant.createdAt;
+            console.log('UTC createdAt:', originalCreatedAt);
+            restaurant.createdAt = moment(originalCreatedAt).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
             console.log('Converted time:', moment(restaurant.createdAt).tz(timezone).format());
 
             restaurant.availableSlots.forEach(slot => {
                 if (slot.startTime) {
-                    console.log("Original startTime:", slot.startTime); 
-                    slot.startTime = moment(slot.startTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
+                    const originalStartTime = slot.startTime;  
+                    console.log('Original startTime (UTC):', originalStartTime);
+                    slot.startTime = moment(originalStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');;
                     console.log("Converted startTime:", slot.startTime); 
                 }
                 if (slot.endTime) {
-                    console.log("Original endTime:", slot.endTime); 
-                    slot.endTime = moment(slot.endTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
+                    const originalEndTime = slot.endTime;
+                    console.log('Original endTime (UTC):', originalEndTime); 
+                    slot.endTime = moment(originalEndTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
                     console.log("Converted endTime:", slot.endTime); 
                 }
             });

@@ -47,7 +47,7 @@ const checkReservations = async () => {
                     await sendEmail(email, subject, text, html);
                     console.log(`Sent reminder to ${email}`);
                     
-                    const checkInUrl = `http://localhost:4000/reservation-arrived?reservationId=${reservation._id}`;
+                    const checkInUrl = `https://resturantappbackend.onrender.com/reservation-arrived?reservationId=${reservation._id}`;
                    
                     const followUpSubject = 'Did you arrive at the restaurant?';
                     const followUpText = 'Please let us know if you have arrived at the restaurant.';

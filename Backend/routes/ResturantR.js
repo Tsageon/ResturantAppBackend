@@ -69,10 +69,9 @@ router.get('/restaurants/search', async (req, res) => {
     }
 
     try {
-        const reservations = await Reservation.find(reservationFilter).populate('restaurantId'); // use restaurantId here
+        const reservations = await Reservation.find(reservationFilter).populate('restaurantId');
 
-        const restaurantIds = reservations.map((reservation) => reservation.restaurantId._id); // access restaurantId here
-
+        const restaurantIds = reservations.map((reservation) => reservation.restaurantId._id);
         const restaurants = await Restaurant.find({
             _id: { $in: restaurantIds },
             ...filter,

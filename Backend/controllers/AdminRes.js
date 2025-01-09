@@ -4,6 +4,9 @@ const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 const timezoneMiddleware = require('./TimeZ');
 
+const testDate = moment('2025-01-16T10:08:00.000Z');
+console.log(testDate.tz('Africa/Johannesburg').format());
+
 
 exports.getAllRestaurants = async (req, res) => {
     try {
@@ -13,8 +16,6 @@ exports.getAllRestaurants = async (req, res) => {
         const restaurants = await Restaurant.find();
 
         const formattedRestaurants = restaurants.map(restaurant => {
-            console.log('Timezone:', timezone);
-            console.log(moment.tz.names());
             console.log(moment.tz("2025-01-16T10:08:00.000Z", 'Africa/Johannesburg').format());
             console.log('UTC time:', moment.utc(restaurant.createdAt).format());
             restaurant.createdAt = moment(restaurant.createdAt).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');

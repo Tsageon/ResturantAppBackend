@@ -7,7 +7,6 @@ const timezoneMiddleware = require('./TimeZ');
 const testDate = moment('2025-01-16T10:08:00.000Z');
 console.log(testDate.tz('Yahhhh:Africa/Johannesburg').format());
 
-
 exports.getAllRestaurants = async (req, res) => {
     try {
         const timezone = req.timezone;
@@ -16,7 +15,6 @@ exports.getAllRestaurants = async (req, res) => {
         const restaurants = await Restaurant.find();
 
         const formattedRestaurants = restaurants.map(restaurant => {
-            console.log(moment.tz("2025-01-16T10:08:00.000Z", 'Africa/Johannesburg').format());
             console.log('UTC time:', moment.utc(restaurant.createdAt).format());
             restaurant.createdAt = moment(restaurant.createdAt).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
             console.log('Converted time:', moment(restaurant.createdAt).tz(timezone).format());

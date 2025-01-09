@@ -88,13 +88,27 @@ exports.loginUser = async (req, res) => {
 
 exports.logoutUser = (req, res) => {
     try {
-        res.status(200).json({ message: 'Logout successful' });
+        const token = req.headers['authorization']?.split(' ')[1];
+
+        if (!token) {
+            return res.status(400).json({ message: 'No token provided' });
+        }
+
+        jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+            if (err) {
+                return res.status(401).json({ message: 'Invalid token' });
+            }
+
+            const userId = decoded.userId; 
+            console.log(`User with ID: ${userId} logged out`);
+
+            res.status(200).json({ message: 'Logout successful' });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Something went wrong while logging out' });
     }
 };
-
 
 
 exports.getUser = async (req, res) => {

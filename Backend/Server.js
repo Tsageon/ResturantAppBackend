@@ -16,7 +16,7 @@ scheduleReminders();
 app.use(bodyParser.json());
 
 app.set('trust proxy', true);
-app.use(timezoneMiddleware);
+
 app.use('/api/', userRoutes);
 app.use('/api/', resturantRoutes);
 app.use('/', paypalRoutes);

@@ -1,8 +1,7 @@
 const Restaurant = require('../model/Resturant');
 const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
-const moment =  require('moment-timezone');
-const Restaurant = require('../model/Resturant');
+const moment = require('moment-timezone');
 const timezoneMiddleware = require('./TimeZ');
 
 exports.getAllRestaurants = async (req, res) => {

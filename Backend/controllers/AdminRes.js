@@ -79,15 +79,21 @@ exports.getRestaurantById = [
 
                 if (slot.endTime) {
                     const utcEndTime = moment.utc(slot.endTime);
-                    console.log('Original endTime (UTC):', utcEndTime.format()); // Log original UTC
+                    console.log('Original endTime (UTC):', utcEndTime.format()); 
                     updatedSlot.endTime = utcEndTime.tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
-                    console.log('Converted endTime:', updatedSlot.endTime); // Log converted
+                    console.log('Converted endTime:', updatedSlot.endTime);
                 }
 
                 return updatedSlot;
             });
 
-            res.status(200).json({ restaurant });
+            res.status(200).json({
+                restaurant: {
+                    ...restaurant,
+                    createdAt: restaurant.createdAt, 
+                    availableSlots: restaurant.availableSlots, 
+                }
+            });
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: 'Error retrieving restaurant' });

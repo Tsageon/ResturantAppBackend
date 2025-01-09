@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose'); 
+const moment = require('moment-timezone'); 
 const Reservation = require('../model/Reservations');
 const Restaurant = require('../model/Resturant');
 const paypalClient = require('../config/paypal'); 
@@ -47,7 +48,8 @@ router.get('/reservation/:id', timezoneMiddleware, authMiddleware, async (req, r
     }
 });
 
-router.post('/reservation',authMiddleware, async (req, res) => {
+
+router.post('/reservation', authMiddleware, async (req, res) => {
     const { userId } = req;  
     const { restaurantId, startTime, endTime, amount } = req.body;  
 
@@ -71,26 +73,26 @@ router.post('/reservation',authMiddleware, async (req, res) => {
             slot.status === true
         );
 
-
         if (!availableSlot) {
             return res.status(400).json({ message: 'The selected time slot is not available' });
         }
 
+        const utcStartTime = moment.tz(startTime, req.timezone).utc().toDate();
+        const utcEndTime = moment.tz(endTime, req.timezone).utc().toDate();
+
         const newReservation = new Reservation({
             userId,  
             restaurantId, 
-            startTime: new Date(startTime), 
-            endTime: new Date(endTime),
+            startTime: utcStartTime, 
+            endTime: utcEndTime,
             amount, 
             status: 'pending'
         });
-        console.log(amount)
+
         availableSlot.status = false;
         
         await restaurant.save();
         await newReservation.save();
-        
-        console.log(newReservation)
 
         res.status(201).json({
             message: 'Reservation created successfully',
@@ -102,7 +104,7 @@ router.post('/reservation',authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/reservation/:id', authMiddleware, async (req, res) => {
+router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, res) => {
     const { id } = req.params;
     const { startTime, endTime, amount } = req.body;
 
@@ -131,10 +133,13 @@ router.put('/reservation/:id', authMiddleware, async (req, res) => {
             return res.status(400).json({ message: 'The selected time slot is not available' });
         }
 
-        reservation.startTime = new Date(startTime);
-        reservation.endTime = new Date(endTime);
+        const convertedStartTime = moment.tz(startTime, req.timezone).utc().toDate();
+        const convertedEndTime = moment.tz(endTime, req.timezone).utc().toDate();
+
+        reservation.startTime = convertedStartTime;
+        reservation.endTime = convertedEndTime;
         reservation.amount = amount;
-        reservation.status = 'pending'; 
+        reservation.status = 'pending';
 
         availableSlot.status = false;
 
@@ -150,6 +155,7 @@ router.put('/reservation/:id', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Failed to update reservation' });
     }
 });
+
 
 router.post('/pay', authMiddleware, async (req, res) => {
     const { reservationId, amount } = req.body;

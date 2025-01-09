@@ -31,7 +31,7 @@ exports.getAllRestaurants = async (req, res) => {
     }
 };
 
-exports.getRestaurantById, timezoneMiddleware = async (req, res) => {
+exports.getRestaurantById = [timezoneMiddleware, async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -44,7 +44,7 @@ exports.getRestaurantById, timezoneMiddleware = async (req, res) => {
         console.error(error);
         res.status(500).json({ message: 'Error retrieving restaurant' });
     }
-};
+}];
 
 exports.addRestaurant = [
     authMiddleware,
@@ -65,19 +65,20 @@ exports.addRestaurant = [
                         throw new Error(`Slot at index ${index} is missing startTime or endTime.`);
                     }
 
-                    const start = new Date(startTime);
-                    const end = new Date(endTime);
-                    if (isNaN(start) || isNaN(end)) {
+                    const utcStartTime = moment.tz(startTime, req.timezone).utc().toDate();
+                    const utcEndTime = moment.tz(endTime, req.timezone).utc().toDate();
+
+                    if (isNaN(utcStartTime) || isNaN(utcEndTime)) {
                         throw new Error(`Invalid date format for slot at index ${index}.`);
                     }
 
-                    if (start >= end) {
+                    if (utcStartTime >= utcEndTime) {
                         throw new Error(`startTime must be before endTime for slot at index ${index}.`);
                     }
 
                     return {
-                        startTime: start,
-                        endTime: end,
+                        startTime: utcStartTime,
+                        endTime: utcEndTime,
                         isAvailable: isAvailable !== undefined ? isAvailable : true,
                     };
                 });
@@ -135,6 +136,7 @@ exports.addRestaurant = [
     }
 ];
 
+
 exports.updateRestaurant = [
     authMiddleware,
     async (req, res) => {
@@ -164,28 +166,26 @@ exports.updateRestaurant = [
 
                 for (let index = 0; index < availableSlots.length; index++) {
                     const { startTime, endTime, isAvailable } = availableSlots[index];
-                    
 
                     if (!startTime || !endTime) {
                         return res.status(400).json({ message: `Slot at index ${index} is missing startTime or endTime.` });
                     }
-    
-                    const start = new Date(startTime);
-                    const end = new Date(endTime);
- 
-                    if (isNaN(start) || isNaN(end)) {
+
+                    const utcStartTime = moment.tz(startTime, req.timezone).utc().toDate();
+                    const utcEndTime = moment.tz(endTime, req.timezone).utc().toDate();
+
+                    if (isNaN(utcStartTime) || isNaN(utcEndTime)) {
                         return res.status(400).json({ message: `Invalid date format for slot at index ${index}.` });
                     }
 
-                
-                    if (start >= end) {
+                    if (utcStartTime >= utcEndTime) {
                         return res.status(400).json({ message: `startTime must be before endTime for slot at index ${index}.` });
                     }
 
                     for (const slot of processedSlots) {
                         if (
-                            (start < slot.endTime && end > slot.startTime) || 
-                            (end > slot.startTime && start < slot.endTime)     
+                            (utcStartTime < slot.endTime && utcEndTime > slot.startTime) || 
+                            (utcEndTime > slot.startTime && utcStartTime < slot.endTime)     
                         ) {
                             overlappingSlots = true;
                             break;
@@ -197,8 +197,8 @@ exports.updateRestaurant = [
                     }
 
                     processedSlots.push({
-                        startTime: start,
-                        endTime: end,
+                        startTime: utcStartTime,
+                        endTime: utcEndTime,
                         isAvailable: isAvailable !== undefined ? isAvailable : true,
                     });
                 }
@@ -217,6 +217,7 @@ exports.updateRestaurant = [
         }
     }
 ];
+
 
 exports.deleteRestaurant = [
     authMiddleware,

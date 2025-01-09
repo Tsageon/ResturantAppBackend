@@ -3,10 +3,11 @@ const mongoose = require('mongoose');
 const Reservation = require('../model/Reservations');
 const Restaurant = require('../model/Resturant');
 const paypalClient = require('../config/paypal'); 
-const authMiddleware = require('./Auth')
+const authMiddleware = require('./Auth');
+const timezoneMiddleware = require('./TimeZ');
 const router = express.Router();
 
-router.get('/reservations', authMiddleware, async (req, res) => {
+router.get('/reservations', timezoneMiddleware, authMiddleware, async (req, res) => {
     const { userId } = req; 
 
     try {
@@ -25,7 +26,7 @@ router.get('/reservations', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/reservation/:id', authMiddleware, async (req, res) => {
+router.get('/reservation/:id', timezoneMiddleware, authMiddleware, async (req, res) => {
     const { id } = req.params;
     const { userId } = req; 
 
@@ -46,7 +47,7 @@ router.get('/reservation/:id', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/reservation', authMiddleware, async (req, res) => {
+router.post('/reservation',authMiddleware, async (req, res) => {
     const { userId } = req;  
     const { restaurantId, startTime, endTime, amount } = req.body;  
 

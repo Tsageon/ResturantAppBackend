@@ -2,15 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Restaurant = require('../model/Resturant');
 const Reservation = require('../model/Reservations');
+const timezoneMiddleware = require('./middleware/timezoneMiddleware');
 const { getAllRestaurants, getRestaurantById, addRestaurant, updateRestaurant, deleteRestaurant } = require('../controllers/AdminRes');
 
 router.post('/addR', addRestaurant);
-router.get('/getR', getAllRestaurants);
-router.get('/getR/:id', getRestaurantById);
+router.get('/getR',timezoneMiddleware, getAllRestaurants);
+router.get('/getR/:id',timezoneMiddleware , getRestaurantById);
 router.put('/:id', updateRestaurant);
 router.delete('/:id', deleteRestaurant);
 
-router.get('/restaurants', async (req, res) => {
+router.get('/restaurants',timezoneMiddleware, async (req, res) => {
     try {
         const restaurants = await Restaurant.find({}, { name: 1, address: 1, location: 1 });
         res.status(200).json(restaurants);
@@ -101,7 +102,7 @@ router.post('/send-notification', async (req, res) => {
     }
 });
 
-router.get('/reservation-arrived', async (req, res) => {
+router.get('/reservation-arrived', timezoneMiddleware,async (req, res) => {
     try {
         const { reservationId } = req.query;
         const reservation = await Reservation.findById(reservationId);

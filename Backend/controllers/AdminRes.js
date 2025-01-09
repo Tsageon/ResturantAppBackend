@@ -1,18 +1,38 @@
 const Restaurant = require('../model/Resturant');
 const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
+const moment =  require('moment-timezone');
+const Restaurant = require('../model/Resturant');
+const timezoneMiddleware = require('./TimeZ');
 
 exports.getAllRestaurants = async (req, res) => {
     try {
+        const timezone = req.headers['x-timezone'] || 'America/New_York';
         const restaurants = await Restaurant.find();
-        res.status(200).json({ restaurants });
+
+        const formattedRestaurants = restaurants.map(restaurant => {
+            restaurant.createdAt = moment(restaurant.createdAt).tz(timezone).format();
+
+            restaurant.availableSlots.forEach(slot => {
+                if (slot.startTime) {
+                    slot.startTime = moment(slot.startTime).tz(timezone).format();
+                }
+                if (slot.endTime) {
+                    slot.endTime = moment(slot.endTime).tz(timezone).format();
+                }
+            });
+
+            return restaurant;
+        });
+
+        res.status(200).json({ restaurants: formattedRestaurants });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error retrieving restaurants' });
     }
 };
 
-exports.getRestaurantById = async (req, res) => {
+exports.getRestaurantById, timezoneMiddleware = async (req, res) => {
     const { id } = req.params;
 
     try {

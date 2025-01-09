@@ -16,19 +16,19 @@ exports.getAllRestaurants = async (req, res) => {
             console.log('Timezone:', timezone);
             console.log(moment.tz.names());
             console.log(moment.tz("2025-01-16T10:08:00.000Z", 'Africa/Johannesburg').format());
-            console.log('Original createdAt:', restaurant.createdAt);
-            restaurant.createdAt = moment.utc(restaurant.createdAt).tz(timezone).format();
-            console.log('Converted createdAt:', restaurant.createdAt); 
-            
+            console.log('UTC time:', moment.utc(restaurant.createdAt).format());
+            restaurant.createdAt = moment(restaurant.createdAt).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
+            console.log('Converted time:', moment(restaurant.createdAt).tz(timezone).format());
+
             restaurant.availableSlots.forEach(slot => {
                 if (slot.startTime) {
                     console.log("Original startTime:", slot.startTime); 
-                    slot.startTime = moment.utc(slot.startTime).tz(timezone).format();
+                    slot.startTime = moment(slot.startTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
                     console.log("Converted startTime:", slot.startTime); 
                 }
                 if (slot.endTime) {
                     console.log("Original endTime:", slot.endTime); 
-                    slot.endTime = moment.utc(slot.endTime).tz(timezone).format();
+                    slot.endTime = moment(slot.endTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
                     console.log("Converted endTime:", slot.endTime); 
                 }
             });

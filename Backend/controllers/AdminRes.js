@@ -4,18 +4,13 @@ const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 const timezoneMiddleware = require('./TimeZ');
 
-const timezoneMiddleware = (req, res, next) => {
-    req.timezone = req.headers['x-timezone'] || 'America/New_York';
-    next();
-};
-
 app.use(timezoneMiddleware);
 
 exports.getAllRestaurants = async (req, res) => {
     try {
         const timezone = req.headers['x-timezone'] || 'America/New_York';
         console.log('Timezone from header:', req.timezone);
-        
+
         const restaurants = await Restaurant.find();
 
         const formattedRestaurants = restaurants.map(restaurant => {

@@ -12,7 +12,7 @@ exports.getAllRestaurants = async (req, res) => {
         const timezone = req.timezone || 'UTC';
         console.log('Using timezone:', timezone);
 
-        const restaurants = await Restaurant.find();
+        const restaurants = await Restaurant.find().lean(); 
 
         const formattedRestaurants = restaurants.map(restaurant => {
             const originalCreatedAt = restaurant.createdAt;
@@ -24,7 +24,7 @@ exports.getAllRestaurants = async (req, res) => {
                 if (slot.startTime) {
                     const originalStartTime = slot.startTime;  
                     console.log('Original startTime (UTC):', originalStartTime);
-                    slot.startTime = moment(originalStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');;
+                    slot.startTime = moment(originalStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
                     console.log("Converted startTime:", slot.startTime); 
                 }
                 if (slot.endTime) {
@@ -52,7 +52,7 @@ exports.getRestaurantById = [
         const timezone = req.timezone;
 
         try {
-            const restaurant = await Restaurant.findById(id);
+            const restaurant = await Restaurant.findById(id).lean();
             if (!restaurant) {
                 return res.status(404).json({ message: 'Restaurant not found' });
             }

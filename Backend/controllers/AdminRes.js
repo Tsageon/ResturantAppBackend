@@ -7,6 +7,7 @@ const timezoneMiddleware = require('./TimeZ');
 exports.getAllRestaurants = async (req, res) => {
     try {
         const timezone = req.headers['x-timezone'] || 'America/New_York';
+        console.log('Timezone from header:', req.timezone);
         const restaurants = await Restaurant.find();
 
         const formattedRestaurants = restaurants.map(restaurant => {

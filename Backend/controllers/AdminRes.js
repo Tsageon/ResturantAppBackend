@@ -45,15 +45,45 @@ exports.getAllRestaurants = async (req, res) => {
     }
 };
 
-exports.getRestaurantById = [timezoneMiddleware, async (req, res) => {
+exports.getRestaurantById = [
+    timezoneMiddleware, 
+    async (req, res) => {
     const { id } = req.params;
+    const timezone = req.timezone;
 
     try {
         const restaurant = await Restaurant.findById(id);
         if (!restaurant) {
             return res.status(404).json({ message: 'Restaurant not found' });
         }
+        console.log('Using timezone:', timezone);
+        const utcCreatedAt = moment.utc(restaurant.createdAt);
+        console.log('UTC createdAt:', utcCreatedAt.format());
+
+        const convertedCreatedAt = utcCreatedAt.tz(timezone);
+        console.log('Converted createdAt:', convertedCreatedAt.format());
+
+        restaurant.createdAt = convertedCreatedAt.format('YYYY-MM-DD HH:mm:ss Z');
+
+        restaurant.availableSlots.forEach(slot => {
+            if (slot.startTime) {
+                const utcStartTime = moment.utc(slot.startTime);
+                console.log('Original startTime (UTC):', utcStartTime.format());
+
+                slot.startTime = utcStartTime.tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
+                console.log('Converted startTime:', slot.startTime);
+            }
+            if (slot.endTime) {
+                const utcEndTime = moment.utc(slot.endTime);
+                console.log('Original endTime (UTC):', utcEndTime.format());
+
+                slot.endTime = utcEndTime.tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
+                console.log('Converted endTime:', slot.endTime);
+            }
+        });
+
         res.status(200).json({ restaurant });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error retrieving restaurant' });

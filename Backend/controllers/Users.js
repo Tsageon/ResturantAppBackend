@@ -132,6 +132,15 @@ exports.getUser = async (req, res) => {
     }
 };
 
+exports.getAllUsers = async (req, res) => {
+    try {
+      const users = await User.find({});
+      res.status(200).json(users);
+    } catch (error) {
+      res.status(500).json({ message: 'Error fetching users', error });
+    }
+  };
+
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
 
@@ -251,33 +260,37 @@ exports.updateUser = [
 ];
 
 exports.deleteUser = [
-    authMiddleware, adminCheck,
+    authMiddleware,
+    adminCheck,
     async (req, res) => {
-        const userId = req.userId;
-        const { id } = req.params;
+        const { id } = req.params; 
+        const userId = req.userId; 
+        const userRole = req.userRole; 
 
         try {
-            if (req.userRole === 'admin') {
-                const userToDelete = await User.findById(id);
-                if (!userToDelete) {
-                    return res.status(404).json({ message: 'User not found' });
-                }
-                await userToDelete.remove();
-                return res.status(403).jsn({ message: 'user account deleted successfully' })
-            }
-            if (userId.toString() !== id) {
-                return res.status(403).json({ message: 'Only admins can delete other Users' });
-            }
-            const user = await User.findById(userId);
-            if (!user) {
+            const userToDelete = await User.findById(id);
+            if (!userToDelete) {
                 return res.status(404).json({ message: 'User not found' });
             }
+
+            if (userRole === 'admin') {
+                await userToDelete.remove();
+                return res.status(200).json({ message: 'User account deleted successfully' });
+            }
+
+            if (userId.toString() !== id) {
+                return res.status(403).json({ message: 'Only admins can delete other users' });
+            }
+
+            await userToDelete.remove();
+            return res.status(200).json({ message: 'Your account has been deleted successfully' });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'something went wrong while deleting the user' })
+            console.error('Error deleting user:', error);
+            res.status(500).json({ message: 'Something went wrong while deleting the user' });
         }
-    }
+    },
 ];
+
 
 exports.manualSendNotification = [
     authMiddleware,

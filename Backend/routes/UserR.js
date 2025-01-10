@@ -4,6 +4,7 @@ const router = express.Router();
 const userController = require('../controllers/Users');
 const reviewController = require('../controllers/ReviewR')
 const authMiddleware = require('../controllers/Auth');
+const adminCheck = require('../controllers/Admin');
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -23,6 +24,14 @@ const registerLimiter = rateLimit({
     legacyHeaders: false,
 })
 
+router.get('/profile', authMiddleware, userController.getUser);
+
+router.get('/users', authMiddleware, adminCheck, userController.getAllUsers);
+
+router.get('/reviews/:restaurantId', authMiddleware, reviewController.getReviews);
+
+router.get('/restaurants/:restaurantsId', reviewController.getRestuarantDetails);
+
 router.post('/register', registerLimiter,userController.registerUser);
 
 router.post('/login', loginLimiter, userController.loginUser);
@@ -37,12 +46,8 @@ router.post('/manual-notification', userController.manualSendNotification);
 
 router.post('/reviews', authMiddleware, reviewController.createReview);
 
-router.get('/profile', authMiddleware, userController.getUser);
-
-router.get('/reviews/:restaurantId', authMiddleware, reviewController.getReviews);
-
-router.get('/restaurants/:restaurantsId', reviewController.getRestuarantDetails)
-
 router.put('/edit', authMiddleware, userController.updateUser);
+
+router.delete('/delete-user/:id', userController.deleteUser)
 
 module.exports = router;

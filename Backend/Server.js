@@ -15,6 +15,7 @@ scheduleReminders();
 app.set('trust proxy', true);
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(timezoneMiddleware);
 app.use('/api/', userRoutes);
 app.use('/api/', resturantRoutes);

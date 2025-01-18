@@ -1,6 +1,6 @@
 const User = require('../model/User');
 const bcrypt = require('bcryptjs');
-const {sendEmail} = require('./email')
+const { sendEmail } = require('./email')
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Reservation = require('../model/Reservations');
@@ -78,7 +78,7 @@ exports.loginUser = async (req, res) => {
             message: 'Login successful',
             token
         });
-        console.log(user.email,user.password,user.role)
+        console.log(user.email, user.password, user.role)
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Something went wrong while logging in user' });
@@ -98,7 +98,7 @@ exports.logoutUser = (req, res) => {
                 return res.status(401).json({ message: 'Invalid token' });
             }
 
-            const userId = decoded.userId; 
+            const userId = decoded.userId;
             console.log(`User with ID: ${userId} logged out`);
 
             res.status(200).json({ message: 'Logout successful' });
@@ -133,63 +133,64 @@ exports.getUser = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try {
-      const users = await User.find({});
-      res.status(200).json(users);
+        const users = await User.find({});
+        res.status(200).json(users);
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching users', error });
+        res.status(500).json({ message: 'Error fetching users', error });
     }
-  };
+};
 
 
 
-  exports.forgotPassword = async (req, res) => {
-      const { email } = req.body;
-  
-      try {
-          const user = await User.findOne({ email });
-          if (!user) {
-              return res.status(404).json({ message: 'User not found with the provided email' });
-          }
-          const hostedURL = process.env.HOSTED_URL
-          const resetToken = crypto.randomBytes(32).toString('hex');
-          const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-  
-          user.resetPasswordToken = hashedToken;
-          user.resetPasswordExpires = Date.now() + 3600000; 
-          await user.save();
-  
-          const resetURL = `${hostedURL}/api/reset-password/${resetToken}`;
-  
-          const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`;
-          const html = `
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    console.log('Request body:', req.body);
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found with the provided email' });
+        }
+        const hostedURL = process.env.HOSTED_URL
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+        user.resetPasswordToken = hashedToken;
+        user.resetPasswordExpires = Date.now() + 3600000;
+        await user.save();
+
+        const resetURL = `${hostedURL}/api/reset-password/${resetToken}`;
+
+        const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`;
+        const html = `
           <p>You requested a password reset. Click the link below to reset your password:</p>
           <p>
-              <form action="${resetURL}" method="POST">
-                  <label for="password">New Password</label>
-                  <input type="password" name="password" required />
-                  <button type="submit">Reset Password</button>
-              </form>
+             <form action="${resetURL}" method="POST">
+  <label for="password">New Password</label>
+  <input type="password" name="password" required />
+  <button type="submit">Reset Password</button>
+</form>
+
           </p>
           <p>If you didn't request this, please ignore this email.</p>
       `;
 
-          
-          const subject = 'Password Reset Request';
-          const emailSent = await sendEmail(user.email, subject, text, html);
-  
-          if (emailSent) {
-              res.status(200).json({
-                  message: 'Password reset email sent successfully. Please check your email.',
-              });
-          } else {
-              res.status(500).json({ message: 'Failed to send password reset email.' });
-          }
-      } catch (error) {
-          console.error('Error in forgotPassword:', error);
-          res.status(500).json({ message: 'Something went wrong while processing the request' });
-      }
-  };
-  
+        const subject = 'Password Reset Request';
+        const emailSent = await sendEmail(user.email, subject, text, html);
+
+        if (emailSent) {
+            res.status(200).json({
+                message: 'Password reset email sent successfully. Please check your email.',
+            });
+        } else {
+            res.status(500).json({ message: 'Failed to send password reset email.' });
+        }
+    } catch (error) {
+        console.error('Error in forgotPassword:', error);
+        res.status(500).json({ message: 'Something went wrong while processing the request' });
+    }
+};
+
 
 
 exports.resetPassword = async (req, res) => {
@@ -197,6 +198,7 @@ exports.resetPassword = async (req, res) => {
     const { password } = req.body;
 
     const passwordString = String(password);
+    console.log('Request body:', req.body);
 
     try {
         const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
@@ -204,7 +206,7 @@ exports.resetPassword = async (req, res) => {
             resetPasswordToken: hashedToken,
             resetPasswordExpires: { $gt: Date.now() },
         });
-        console.log('Password from request body:', password);
+
 
         if (!user) {
             return res.status(400).json({ message: 'Invalid or expired reset token' });
@@ -214,10 +216,12 @@ exports.resetPassword = async (req, res) => {
         }
 
         const saltRounds = 10;
-       
+
 
         user.password = await bcrypt.hash(passwordString, saltRounds);
-        
+        console.log('Password from request body:', passwordString);
+        console.log('Password', password)
+
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
 
@@ -235,6 +239,8 @@ exports.updateUser = [
     async (req, res) => {
         const userId = req.userId;
         const { email, password, fullname, role, phonenumber } = req.body;
+        console.log('Request body:', req.body);
+
 
         try {
             const user = await User.findById(userId);
@@ -284,9 +290,9 @@ exports.deleteUser = [
     authMiddleware,
     adminCheck,
     async (req, res) => {
-        const { id } = req.params; 
-        const userId = req.userId; 
-        const userRole = req.userRole; 
+        const { id } = req.params;
+        const userId = req.userId;
+        const userRole = req.userRole;
 
         try {
             const userToDelete = await User.findById(id);
@@ -317,6 +323,8 @@ exports.manualSendNotification = [
     authMiddleware,
     async (req, res) => {
         const { reservationId } = req.body;
+        console.log('Request body:', req.body);
+
 
         try {
             const reservation = await Reservation.findById(reservationId);

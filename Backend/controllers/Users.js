@@ -158,7 +158,7 @@ exports.getAllUsers = async (req, res) => {
           user.resetPasswordExpires = Date.now() + 3600000; 
           await user.save();
   
-          const resetURL = `${hostedURL}/reset-password/${resetToken}`;
+          const resetURL = `${hostedURL}/api/reset-password/${resetToken}`;
   
           const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`;
           const html = `

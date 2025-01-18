@@ -1,3 +1,4 @@
+require('dotenv').config();
 const User = require('../model/User');
 const bcrypt = require('bcryptjs');
 const { sendEmail } = require('./email')
@@ -159,21 +160,19 @@ exports.forgotPassword = async (req, res) => {
         user.resetPasswordExpires = Date.now() + 3600000;
         await user.save();
 
+        console.log('HOSTED_URL:', process.env.HOSTED_URL);
         const resetURL = `${hostedURL}/api/reset-password/${resetToken}`;
 
         const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`;
-        const html = `
-          <p>You requested a password reset. Click the link below to reset your password:</p>
+        const html = `<p>You requested a password reset. Click the link below to reset your password:</p>
           <p>
              <form action="${resetURL}" method="POST">
-  <label for="password">New Password</label>
-  <input type="password" name="password" required />
-  <button type="submit">Reset Password</button>
-</form>
-
+             <label for="password">New Password</label>
+             <input type="password" name="password" required />
+             <button type="submit">Reset Password</button>
+           </form>
           </p>
-          <p>If you didn't request this, please ignore this email.</p>
-      `;
+          <p>If you didn't request this, please ignore this email.</p>`;
 
         const subject = 'Password Reset Request';
         const emailSent = await sendEmail(user.email, subject, text, html);

@@ -37,7 +37,7 @@ router.post('/login', loginLimiter, userController.loginUser);
 
 router.post('/logout', authMiddleware, userController.logoutUser);
 
-router.post('/forgot-password', authMiddleware, userController.forgotPassword);
+router.post('/forgot-password'. userController.forgotPassword);
 
 router.post('/reset-password/:token', userController.resetPassword);
 

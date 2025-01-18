@@ -196,6 +196,8 @@ exports.resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
 
+    const passwordString = String(password);
+
     try {
         const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
         const user = await User.findOne({
@@ -203,10 +205,13 @@ exports.resetPassword = async (req, res) => {
             resetPasswordExpires: { $gt: Date.now() },
         });
         console.log('Password from request body:', password);
+
         if (!user) {
             return res.status(400).json({ message: 'Invalid or expired reset token' });
         }
-
+        if (!passwordString) {
+            return res.status(400).json({ message: 'Password is needed' });
+        }
         const saltRounds = 10;
         if (!password) {
             return res.status(400).json({ message: 'Password is required' });

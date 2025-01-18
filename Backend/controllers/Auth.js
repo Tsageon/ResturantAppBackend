@@ -2,27 +2,31 @@ const jwt = require('jsonwebtoken');
 
 const authMiddleware = (req, res, next) => {
     const authHeader = req.header('Authorization');
-    const token = authHeader && authHeader.replace('Bearer ', '').trim();
     
+    if (!authHeader) {
+        return res.status(401).json({ message: 'Authorization header missing' });
+    }
+    
+    const token = authHeader.replace('Bearer ', '').trim(); 
+
     if (!token) {
-        return res.status(401).json({ message: 'No token provided, access denied' });
+        return res.status(401).json({ message: 'Token is required' });
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.userId = decoded.userId;
-        req.userRole = decoded.role;
 
-        const expirationTime = decoded.exp * 1000; 
+        const expirationTime = decoded.exp * 1000;
         const currentTime = Date.now();
 
-        if (expirationTime - currentTime <= 5 * 60 * 1000) { 
+        if (expirationTime - currentTime <= 5 * 60 * 1000) {
             const newToken = jwt.sign(
-                { userId: decoded.userId, role: decoded.role }, 
+                { userId: decoded.userId, role: decoded.role },
                 process.env.JWT_SECRET,
                 { expiresIn: '5h' }
             );
-            res.setHeader('X-New-Token', newToken); 
+            res.setHeader('X-New-Token', newToken);
         }
 
         next();

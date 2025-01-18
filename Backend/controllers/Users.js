@@ -1,6 +1,6 @@
 const User = require('../model/User');
 const bcrypt = require('bcryptjs');
-const { sendEmail } = require('./email')
+const {sendEmail} = require('./email')
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Reservation = require('../model/Reservations');
@@ -141,42 +141,46 @@ exports.getAllUsers = async (req, res) => {
     }
   };
 
-exports.forgotPassword = async (req, res) => {
-    const { email } = req.body;
 
-    try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found with the provided email' });
-        }
 
-        const resetToken = crypto.randomBytes(32).toString('hex');
+  exports.forgotPassword = async (req, res) => {
+      const { email } = req.body;
+  
+      try {
+          const user = await User.findOne({ email });
+          if (!user) {
+              return res.status(404).json({ message: 'User not found with the provided email' });
+          }
+  
+          const resetToken = crypto.randomBytes(32).toString('hex');
+          const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  
+          user.resetPasswordToken = hashedToken;
+          user.resetPasswordExpires = Date.now() + 3600000; 
+          await user.save();
+  
+          const resetURL = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+  
+          const subject = 'Password Reset Request';
+          const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`;
+          const html = `<p>You requested a password reset. Click the link below to reset your password:</p><p><a href="${resetURL}">${resetURL}</a></p><p>If you didn't request this, please ignore this email.</p>`;
+  
+          const emailSent = await sendEmail(user.email, subject, text, html);
+  
+          if (emailSent) {
+              res.status(200).json({
+                  message: 'Password reset email sent successfully. Please check your email.',
+              });
+          } else {
+              res.status(500).json({ message: 'Failed to send password reset email.' });
+          }
+      } catch (error) {
+          console.error('Error in forgotPassword:', error);
+          res.status(500).json({ message: 'Something went wrong while processing the request' });
+      }
+  };
+  
 
-        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-        user.resetPasswordToken = hashedToken;
-        user.resetPasswordExpires = Date.now() + 3600000;
-
-        await user.save();
-
-        const resetURL = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
-
-        const mailOptions = {
-            from: process.env.EMAIL_FROM,
-            to: user.email,
-            subject: 'Password Reset Request',
-            text: `You requested a password reset. Click the link below to reset your password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`,
-        };
-
-        await transporter.sendMail(mailOptions);
-
-        res.status(200).json({
-            message: 'Password reset email sent successfully. Please check your email.',
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Something went wrong while processing the request' });
-    }
-};
 
 exports.resetPassword = async (req, res) => {
     const { token } = req.params;
@@ -210,7 +214,6 @@ exports.resetPassword = async (req, res) => {
 
 exports.updateUser = [
     authMiddleware,
-    adminCheck,
     async (req, res) => {
         const userId = req.userId;
         const { email, password, fullname, role, phonenumber } = req.body;

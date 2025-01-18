@@ -17,6 +17,7 @@ const sendEmail = async (to, subject, text, html) => {
             text, 
             html,
         });
+        console.log(transporter);
 
         console.log('Message sent: %s', info.messageId);
         return true;
@@ -26,4 +27,4 @@ const sendEmail = async (to, subject, text, html) => {
     }
 };
 
-module.exports = {transporter, sendEmail};
+module.exports = {sendEmail};

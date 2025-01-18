@@ -172,6 +172,7 @@ exports.getAllUsers = async (req, res) => {
           </p>
           <p>If you didn't request this, please ignore this email.</p>
       `;
+
           
           const subject = 'Password Reset Request';
           const emailSent = await sendEmail(user.email, subject, text, html);
@@ -201,14 +202,17 @@ exports.resetPassword = async (req, res) => {
             resetPasswordToken: hashedToken,
             resetPasswordExpires: { $gt: Date.now() },
         });
-
+        console.log('Password from request body:', password);
         if (!user) {
             return res.status(400).json({ message: 'Invalid or expired reset token' });
         }
 
         const saltRounds = 10;
-        user.password = await bcrypt.hash(password, saltRounds);
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required' });
+        }
 
+        user.password = await bcrypt.hash(password, saltRounds);
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
 

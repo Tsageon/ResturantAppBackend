@@ -6,7 +6,6 @@ const scheduleReminders = require('./controllers/Scheduler.js')
 const userRoutes = require('./routes/UserR.js')
 const resturantRoutes = require('./routes/ResturantR.js')
 const paypalRoutes = require('./controllers/Paypal.js')
-const bodyParser = require('body-parser');
 require('dotenv').config();
 
 
@@ -15,7 +14,7 @@ scheduleReminders();
 
 app.set('trust proxy', true);
 
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(timezoneMiddleware);
 app.use('/api/', userRoutes);
 app.use('/api/', resturantRoutes);

@@ -212,12 +212,12 @@ exports.resetPassword = async (req, res) => {
         if (!passwordString) {
             return res.status(400).json({ message: 'Password is needed' });
         }
-        const saltRounds = 10;
-        if (!password) {
-            return res.status(400).json({ message: 'Password is required' });
-        }
 
-        user.password = await bcrypt.hash(password, saltRounds);
+        const saltRounds = 10;
+       
+
+        user.password = await bcrypt.hash(passwordString, saltRounds);
+        
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
 

@@ -4,7 +4,6 @@ const {sendEmail} = require('./email')
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Reservation = require('../model/Reservations');
-const transporter = require('../controllers/email');
 const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 
@@ -151,7 +150,7 @@ exports.getAllUsers = async (req, res) => {
           if (!user) {
               return res.status(404).json({ message: 'User not found with the provided email' });
           }
-  
+          const hostedURL = process.env.HOSTED_URL
           const resetToken = crypto.randomBytes(32).toString('hex');
           const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
   
@@ -159,12 +158,22 @@ exports.getAllUsers = async (req, res) => {
           user.resetPasswordExpires = Date.now() + 3600000; 
           await user.save();
   
-          const resetURL = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+          const resetURL = `${hostedURL}/reset-password/${resetToken}`;
   
-          const subject = 'Password Reset Request';
           const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`;
-          const html = `<p>You requested a password reset. Click the link below to reset your password:</p><p><a href="${resetURL}">${resetURL}</a></p><p>If you didn't request this, please ignore this email.</p>`;
-  
+          const html = `
+          <p>You requested a password reset. Click the link below to reset your password:</p>
+          <p>
+              <form action="${resetURL}" method="POST">
+                  <label for="password">New Password</label>
+                  <input type="password" name="password" required />
+                  <button type="submit">Reset Password</button>
+              </form>
+          </p>
+          <p>If you didn't request this, please ignore this email.</p>
+      `;
+          
+          const subject = 'Password Reset Request';
           const emailSent = await sendEmail(user.email, subject, text, html);
   
           if (emailSent) {

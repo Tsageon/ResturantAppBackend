@@ -67,11 +67,18 @@ router.post('/reservation', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Restaurant not found' });
         }
 
-        const availableSlot = restaurant.availableSlots.find(slot => 
-            new Date(slot.startTime).getTime() === new Date(startTime).getTime() &&
-            new Date(slot.endTime).getTime() === new Date(endTime).getTime() && 
-            slot.status === true
-        );
+        const availableSlot = restaurant.availableSlots.find(slot => {
+            const slotStartTime = new Date(slot.startTime);
+            const slotEndTime = new Date(slot.endTime);
+            const requestedStartTime = new Date(startTime);
+            const requestedEndTime = new Date(endTime);
+
+            return (
+                requestedStartTime >= slotStartTime && 
+                requestedEndTime <= slotEndTime && 
+                slot.status === true
+            );
+        });
 
         if (!availableSlot) {
             return res.status(400).json({ message: 'The selected time slot is not available' });

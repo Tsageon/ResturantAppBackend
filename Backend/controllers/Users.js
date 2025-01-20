@@ -152,7 +152,7 @@ exports.forgotPassword = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found with the provided email' });
         }
-        const hostedURL = process.env.HOSTED_URL
+        const hostedURL = process.env.HOSTED_URL || 'http://localhost:4000';
         const resetToken = crypto.randomBytes(32).toString('hex');
         const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 

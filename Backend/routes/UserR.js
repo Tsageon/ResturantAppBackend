@@ -27,6 +27,8 @@ const registerLimiter = rateLimit({
 
 router.get('/users', authMiddleware, adminCheck, userController.getAllUsers);
 
+router.get('/user', authMiddleware, userController.getUser);
+
 router.get('/reviews/:restaurantId', authMiddleware, reviewController.getReviews);
 
 router.get('/restaurants/:restaurantsId', reviewController.getRestuarantDetails);

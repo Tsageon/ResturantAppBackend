@@ -16,6 +16,7 @@ const authMiddleware = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.userId = decoded.userId;
+        req.userRole = decoded.role
 
         const expirationTime = decoded.exp * 1000;
         const currentTime = Date.now();

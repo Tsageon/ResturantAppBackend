@@ -119,16 +119,22 @@ exports.getUser = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User does not exist' });
         }
+
+        const reservations = await Reservation.find({ userId }).populate('userId').populate('restaurantId');
+
         res.status(200).json({
-            email: user.email,
-            phonenumber: user.phonenumber,
-            fullname: user.fullname,
-            role: user.role,
-            createdAt: user.createdAt
+            user: {
+                email: user.email,
+                phonenumber: user.phonenumber,
+                fullname: user.fullname,
+                role: user.role,
+                createdAt: user.createdAt
+            },
+            reservations: reservations.length > 0 ? reservations : 'No reservations yet'
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Something went wrong while fetching the user profile' });
+        res.status(500).json({ message: 'Something went wrong while fetching the user profile and reservations' });
     }
 };
 

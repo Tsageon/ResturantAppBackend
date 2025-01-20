@@ -51,27 +51,37 @@ router.get('/reservation/:id', timezoneMiddleware, authMiddleware, async (req, r
 
 router.post('/reservation', authMiddleware, async (req, res) => {
     const { userId } = req;  
-    const { restaurantId, startTime, endTime, amount } = req.body;  
+    const { restaurantId, startTime, endTime, amount } = req.body;
+    
+    console.log('Reservation request received:', { userId, restaurantId, startTime, endTime, amount });
 
     if (!restaurantId || !startTime || !endTime || !amount) {
+        console.log('Validation Error: Missing required fields');
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
     if (new Date(startTime) >= new Date(endTime)) {
+        console.log('Validation Error: Start time must be before end time');
         return res.status(400).json({ message: 'Start time must be before end time' });
     }
 
     try {
         const restaurant = await Restaurant.findById(restaurantId);
         if (!restaurant) {
+            console.log(`Restaurant not found for ID: ${restaurantId}`);
             return res.status(404).json({ message: 'Restaurant not found' });
         }
+
+        console.log('Fetched restaurant details:', restaurant);
 
         const availableSlot = restaurant.availableSlots.find(slot => {
             const slotStartTime = new Date(slot.startTime);
             const slotEndTime = new Date(slot.endTime);
             const requestedStartTime = new Date(startTime);
             const requestedEndTime = new Date(endTime);
+
+            console.log('Checking slot:', { slotStartTime, slotEndTime, slotStatus: slot.status });
+            console.log('Requested times:', { requestedStartTime, requestedEndTime });
 
             return (
                 requestedStartTime >= slotStartTime && 
@@ -81,6 +91,7 @@ router.post('/reservation', authMiddleware, async (req, res) => {
         });
 
         if (!availableSlot) {
+            console.log('No available slot found for the requested time range');
             return res.status(400).json({ message: 'The selected time slot is not available' });
         }
 
@@ -99,7 +110,9 @@ router.post('/reservation', authMiddleware, async (req, res) => {
         availableSlot.status = false;
         
         await restaurant.save();
+        console.log('Updated restaurant slots:', restaurant.availableSlots);
         await newReservation.save();
+        console.log('New reservation created:', newReservation);
 
         res.status(201).json({
             message: 'Reservation created successfully',

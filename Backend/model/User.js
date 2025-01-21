@@ -11,6 +11,13 @@ const userSchema = new mongoose.Schema({
     deviceToken:{ type: String, required: false},
     resetPasswordToken:  {type: String},
     resetPasswordExpires: {type: Date},
+    subscription: {
+        endpoint: { type: String },
+        keys: {
+            p256dh: { type: String },
+            auth: { type: String },
+        },
+    },
 });
 
 module.exports = mongoose.model('User', userSchema);

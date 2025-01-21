@@ -15,4 +15,4 @@ admin.initializeApp({
 
 const messaging = admin.messaging();
 
-module.exports = admin;
+module.exports = {messaging, admin};

@@ -325,11 +325,10 @@ exports.deleteUser = [
 
 
 exports.manualSendNotification = [
-    authMiddleware,
+    authMiddleware,  
     async (req, res) => {
         const { reservationId } = req.body;
         console.log('Request body:', req.body);
-
 
         try {
             const reservation = await Reservation.findById(reservationId);
@@ -344,17 +343,60 @@ exports.manualSendNotification = [
                 return res.status(404).json({ message: 'User not found' });
             }
 
-            const email = user.email;
-            const subject = 'Manual Reservation Reminder';
-            const text = `Your reservation at the restaurant is coming up soon. Please get ready!`;
-            const html = `<p>Your reservation at the restaurant is coming up soon. Please get ready!</p>`;
+            const pushToken = user.deviceToken;
 
-            await sendEmail(email, subject, text, html);
+            if (pushToken) {
+                const pushTitle = 'Manual Reservation Reminder';
+                const pushBody = 'Your reservation at the restaurant is coming up soon. Please get ready!';
 
-            res.status(200).json({ message: `Manual notification sent to ${email}` });
+                try {
+                    await sendPushNotification(pushToken, pushTitle, pushBody);
+                    res.status(200).json({ message: `Manual push notification sent to ${user.email}` });
+                    console.log(`Sent push notification to ${user.email}`);
+                } catch (pushError) {
+                    console.error(`Error sending push notification to ${user.email}:`, pushError);
+                }
+            } else {
+                const email = user.email;
+                const subject = 'Manual Reservation Reminder';
+                const text = `Your reservation at the restaurant is coming up soon. Please get ready!`;
+                const html = `<p>Your reservation at the restaurant is coming up soon. Please get ready!</p>`;
+
+                try {
+                    await sendEmail(email, subject, text, html);
+                    res.status(200).json({ message: `Manual email sent to ${user.email}` });
+                    console.log(`Sent email reminder to ${email}`);
+                } catch (emailError) {
+                    console.error(`Error sending email to ${email}:`, emailError);
+                }
+            }
+
+            res.status(200).json({ message: `Manual notification sent to ${user.email}` });
         } catch (error) {
             console.error('Error sending manual notification:', error);
             res.status(500).json({ message: 'Failed to send manual notification' });
         }
     }
 ];
+
+
+exports.Notification = async (req, res) => {
+    const { token } = req.body;  
+    const userId = req.userId;    
+  
+    if (!token) {
+        return res.status(400).json({ message: 'Token is required' });
+    }
+
+    try {
+        const user = await User.findByIdAndUpdate(userId, { deviceToken: token }, { new: true });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ message: 'Token stored successfully', user: user });
+    } catch (error) {
+        console.error('Error storing token:', error);
+        res.status(500).json({ message: 'Error storing token' });
+    }};

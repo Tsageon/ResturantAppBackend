@@ -112,7 +112,7 @@ router.post('/reservation', authMiddleware, async (req, res) => {
         await restaurant.save();
         console.log('Updated restaurant slots:', restaurant.availableSlots);
         await newReservation.save();
-        console.log('New reservation created:', newReservation);
+        console.log('New reservation created:', newReservation);.0
 
         res.status(201).json({
             message: 'Reservation created successfully',

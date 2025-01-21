@@ -22,7 +22,6 @@ const sendPushNotification = async (deviceToken, title, body) => {
     }
 };
 
-let intervalID;
 
 const checkReservations = async () => {
     try {
@@ -52,13 +51,11 @@ const checkReservations = async () => {
                     const followUpSubject = 'Did you arrive at the restaurant?';
                     const followUpText = 'Please let us know if you have arrived at the restaurant.';
                     const followUpHtml = `<p>Please let us know if you've arrived at the restaurant by clicking the link below.</p>
-                    <a href="${checkInUrl}">Click here to confirm your arrival</a>`;
+                    <a href="${checkInUrl}">Click here to confirm your arrival!</a>`;
 
                     await sendEmail(email, followUpSubject, followUpText, followUpHtml);
                     console.log(`Sent follow-up to ${email}`);
                     
-                    clearInterval(intervalID);
-                    console.log('Stopped checking reservations after sending follow-up email.');
                 }
             }
 
@@ -67,21 +64,20 @@ const checkReservations = async () => {
                 const slot = restaurant.availableSlots.find(slot => slot._id.toString() === reservation.slotId.toString());
                 
                 if (slot) {
-                    slot.status = true; 
+                    slot.status = true;
                     await restaurant.save();
                     console.log(`Slot for reservation ${reservation._id} made available.`);
                 }
 
-                reservation.status = 'expired';
+                reservation.status = 'expired'; 
                 await reservation.save();
             }
         }
     } catch (error) {
         console.error('Error checking reservations:', error);
-        intervalID = setInterval(checkReservations, 60 * 5000);
     }
 };
 
-intervalID = setInterval(checkReservations, 60 * 5000);
+intervalID = setInterval(checkReservations, 300000);
 
-module.exports = {sendPushNotification };
+module.exports = { sendPushNotification };

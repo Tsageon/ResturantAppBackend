@@ -78,23 +78,27 @@ router.post('/reservation', authMiddleware, async (req, res) => {
         const requestedEndTimeUtc = new Date(endTime); 
 
         const availableSlot = restaurant.availableSlots.find(slot => {
-            const slotStartTimeUtc = new Date(slot.startTime); 
-            const slotEndTimeUtc = new Date(slot.endTime); 
-
+            const slotStartTimeUtc = new Date(slot.startTime);
+            const slotEndTimeUtc = new Date(slot.endTime);
+            const requestedStartTimeUtc = new Date(startTime); 
+            const requestedEndTimeUtc = new Date(endTime);
+        
             console.log('Checking slot:', { slotStartTimeUtc, slotEndTimeUtc, slotStatus: slot.status });
             console.log('Requested times:', { requestedStartTimeUtc, requestedEndTimeUtc });
-
+        
+         
             return (
                 requestedStartTimeUtc >= slotStartTimeUtc && 
                 requestedEndTimeUtc <= slotEndTimeUtc && 
                 slot.status === true
             );
         });
-
+        
         if (!availableSlot) {
             console.log('No available slot found for the requested time range');
             return res.status(400).json({ message: 'The selected time slot is not available' });
         }
+        
 
         const newReservation = new Reservation({
             userId,  

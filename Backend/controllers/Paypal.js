@@ -51,11 +51,11 @@ router.get('/reservation/:id', timezoneMiddleware, authMiddleware, async (req, r
 
 router.post('/reservation', authMiddleware, async (req, res) => {
     const { userId } = req;  
-    const { restaurantId, startTime, endTime, tableType, numberOfGuests } = req.body;
+    const { restaurantId, startTime, endTime, tableType, numberOfGuests, amount } = req.body;
     
-    console.log('Reservation request received:', { userId, restaurantId, startTime, endTime, tableType, numberOfGuests });
+    console.log('Reservation request received:', { userId, restaurantId, startTime, endTime, tableType, numberOfGuests, amount });
 
-    if (!restaurantId || !startTime || !endTime || !numberOfGuests) {
+    if (!restaurantId || !startTime || !endTime || !numberOfGuests || !amount) {
         console.log('Validation Error: Missing required fields');
         return res.status(400).json({ message: 'Missing required fields' });
     }
@@ -74,18 +74,19 @@ router.post('/reservation', authMiddleware, async (req, res) => {
 
         console.log('Fetched restaurant details:', restaurant);
 
-        const availableSlot = restaurant.availableSlots.find(slot => {
-            const slotStartTime = new Date(slot.startTime);
-            const slotEndTime = new Date(slot.endTime);
-            const requestedStartTime = new Date(startTime);
-            const requestedEndTime = new Date(endTime);
+        const requestedStartTimeUtc = new Date(startTime); 
+        const requestedEndTimeUtc = new Date(endTime); 
 
-            console.log('Checking slot:', { slotStartTime, slotEndTime, slotStatus: slot.status });
-            console.log('Requested times:', { requestedStartTime, requestedEndTime });
+        const availableSlot = restaurant.availableSlots.find(slot => {
+            const slotStartTimeUtc = new Date(slot.startTime); 
+            const slotEndTimeUtc = new Date(slot.endTime); 
+
+            console.log('Checking slot:', { slotStartTimeUtc, slotEndTimeUtc, slotStatus: slot.status });
+            console.log('Requested times:', { requestedStartTimeUtc, requestedEndTimeUtc });
 
             return (
-                requestedStartTime >= slotStartTime && 
-                requestedEndTime <= slotEndTime && 
+                requestedStartTimeUtc >= slotStartTimeUtc && 
+                requestedEndTimeUtc <= slotEndTimeUtc && 
                 slot.status === true
             );
         });
@@ -95,23 +96,21 @@ router.post('/reservation', authMiddleware, async (req, res) => {
             return res.status(400).json({ message: 'The selected time slot is not available' });
         }
 
-        const utcStartTime = moment.tz(startTime, req.timezone).utc().toDate();
-        const utcEndTime = moment.tz(endTime, req.timezone).utc().toDate();
-
         const newReservation = new Reservation({
             userId,  
             restaurantId, 
-            startTime: utcStartTime, 
-            endTime: utcEndTime,
+            startTime: requestedStartTimeUtc, 
+            endTime: requestedEndTimeUtc,
             tableType,
             numberOfGuests,
+            amount,
             status: 'pending'
         });
 
         availableSlot.status = false;
-        
         await restaurant.save();
         console.log('Updated restaurant slots:', restaurant.availableSlots);
+
         await newReservation.save();
         console.log('New reservation created:', newReservation);
 

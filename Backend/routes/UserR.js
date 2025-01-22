@@ -48,7 +48,7 @@ router.post('/manual-notification', userController.manualSendNotification);
 
 router.post('/reviews', authMiddleware, reviewController.createReview);
 
-router.post('/subscribe', userController.Subscribe);
+router.post('/subscribe', authMiddleware, userController.Subscribe);
 
 router.put('/edit', authMiddleware, userController.updateUser);
 

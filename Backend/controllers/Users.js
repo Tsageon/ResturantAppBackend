@@ -1,12 +1,16 @@
 require('dotenv').config();
-const User = require('../model/User');
 const bcrypt = require('bcryptjs');
-const { sendEmail } = require('./email')
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const webPush = require('web-push');
+const { sendEmail } = require('./email')
+const User = require('../model/User');
 const Reservation = require('../model/Reservations');
 const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
+
+const VapidKey = process.env.VAPID_PUBLIC_KEY
+const VapidPrivateKey = process.VAPID_PRIVATE_KEY
 
 exports.registerUser = async (req, res) => {
     const { email, password, phonenumber, fullname, role } = req.body;
@@ -389,7 +393,11 @@ exports.Notification = async (req, res) => {
     }
 
     try {
-        const user = await User.findByIdAndUpdate(userId, { deviceToken: token }, { new: true });
+        const user = await User.findByIdAndUpdate(
+            userId, 
+            { deviceToken: token }, 
+            { new: true }
+        );
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -401,10 +409,10 @@ exports.Notification = async (req, res) => {
         res.status(500).json({ message: 'Error storing token' });
     }};
 
-    exports.Subscribe = async (req, res) => {
+exports.Subscribe = async (req, res) => {
         const {email, subscription } = req.body;
+        
         try {
-       
             const user = await User.findOne({ email });
     
             if (!user) {

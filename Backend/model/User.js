@@ -12,12 +12,12 @@ const userSchema = new mongoose.Schema({
     resetPasswordToken:  {type: String},
     resetPasswordExpires: {type: Date},
     subscription: {
-        endpoint: { type: String },
+        endpoint: { type: String, required: false },
         keys: {
-            p256dh: { type: String },
-            auth: { type: String },
+            p256dh: { type: String, required: false },
+            auth: { type: String, required: false },
         },
-    },
+    },    
 });
 
 module.exports = mongoose.model('User', userSchema);

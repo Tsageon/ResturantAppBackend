@@ -1,5 +1,7 @@
 const moment = require('moment-timezone');
 const Restaurant = require('../model/Resturant');
+const Reservation = require('../model/Reservations');
+const stopCheckingReservations = require('./Notification');
 const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 const timezoneMiddleware = require('./TimeZ');
@@ -177,13 +179,32 @@ exports.getRestaurantById = [
 exports.addRestaurant = [
     authMiddleware,
     async (req, res) => {
-        const { name, address, location, cuisine, rating, availableSlots, imageUrl } = req.body;
+        const { name, address, location, cuisine, rating, availableSlots, imageUrl, amount } = req.body;
 
         if (!name || !cuisine || !rating || !location) {
             return res.status(400).json({ message: 'Name, cuisine, location, and rating are required' });
         }
 
         try {
+
+            const defaultAmount = {
+                vip: 50,
+                outdoor: 30,
+                standard: 20,
+            };
+
+            const restaurantAmount = amount || defaultAmount;
+
+            if (typeof restaurantAmount.vip !== 'number' || restaurantAmount.vip <= 0) {
+                return res.status(400).json({ message: 'Invalid VIP price.' });
+            }
+            if (typeof restaurantAmount.outdoor !== 'number' || restaurantAmount.outdoor <= 0) {
+                return res.status(400).json({ message: 'Invalid outdoor price.' });
+            }
+            if (typeof restaurantAmount.standard !== 'number' || restaurantAmount.standard <= 0) {
+                return res.status(400).json({ message: 'Invalid standard price.' });
+            }
+
             let processedSlots = [];
             if (availableSlots && Array.isArray(availableSlots)) {
                 processedSlots = availableSlots.map((slot, index) => {
@@ -230,7 +251,8 @@ exports.addRestaurant = [
                 cuisine,
                 rating,
                 availableSlots: processedSlots,
-                imageUrl
+                imageUrl,
+                amount: restaurantAmount,
             });
 
             await newRestaurant.save();
@@ -245,7 +267,8 @@ exports.addRestaurant = [
                     cuisine: newRestaurant.cuisine,
                     rating: newRestaurant.rating,
                     availableSlots: newRestaurant.availableSlots,
-                    imageUrl: newRestaurant.imageUrl
+                    imageUrl: newRestaurant.imageUrl,
+                    amount: newRestaurant.amount, 
                 }
             });
 
@@ -261,14 +284,16 @@ exports.addRestaurant = [
                 return res.status(400).json({ message: 'One or more slots overlap with existing slots.' });
             }
             res.status(500).json({ message: 'Error adding restaurant. Please check the provided data.' });
-        }}];
+        }
+    }
+];
 
 
 exports.updateRestaurant = [
     authMiddleware,
     async (req, res) => {
         const { id } = req.params;
-        const { name, address, location, cuisine, rating, availableSlots, imageUrl } = req.body;
+        const { name, address, location, cuisine, rating, availableSlots, imageUrl, amount } = req.body;
 
         try {
             const restaurant = await Restaurant.findById(id);
@@ -282,6 +307,22 @@ exports.updateRestaurant = [
             if (cuisine) restaurant.cuisine = cuisine;
             if (rating) restaurant.rating = rating;
             if (imageUrl) restaurant.imageUrl = imageUrl;
+
+            if (amount) {
+                const restaurantAmount = amount;
+
+                if (typeof restaurantAmount.vip !== 'number' || restaurantAmount.vip <= 0) {
+                    return res.status(400).json({ message: 'Invalid VIP price.' });
+                }
+                if (typeof restaurantAmount.outdoor !== 'number' || restaurantAmount.outdoor <= 0) {
+                    return res.status(400).json({ message: 'Invalid outdoor price.' });
+                }
+                if (typeof restaurantAmount.standard !== 'number' || restaurantAmount.standard <= 0) {
+                    return res.status(400).json({ message: 'Invalid standard price.' });
+                }
+
+                restaurant.amount = restaurantAmount;
+            }
 
             if (availableSlots) {
                 if (!Array.isArray(availableSlots)) {
@@ -334,6 +375,7 @@ exports.updateRestaurant = [
             }
 
             await restaurant.save();
+
             res.status(200).json({
                 message: 'Restaurant updated successfully',
                 restaurant
@@ -344,7 +386,6 @@ exports.updateRestaurant = [
         }
     }
 ];
-
 
 exports.deleteRestaurant = [
     authMiddleware,
@@ -367,58 +408,26 @@ exports.deleteRestaurant = [
     }
 ];
 
-exports. sendNotifications = async (req, res) => {
-    const { deviceToken, title, body, icon } = req.body;
-
-    try {
-        const payload = JSON.stringify({
-            title,
-            body,
-            icon,
-        });
-
-        if (deviceToken) {
-            const success = await sendPushNotification(deviceToken, title, body);
-            if (success) {
-                return res.status(200).json({ message: 'Notification sent successfully!' });
-            } else {
-                return res.status(500).json({ message: 'Notification failed!' });
-            }
-        } else {
-            const users = await User.find({ 'subscription.endpoint': { $exists: true } });
-
-            const promises = users.map(user =>
-                webPush.sendNotification(user.subscription, payload)
-                    .catch(error => console.error('Error sending notification to:', user.email, error))
-            );
-
-            await Promise.all(promises);
-
-            return res.status(200).json({ message: 'Notifications sent successfully!' });
-        }
-    } catch (error) {
-        console.error('Error sending notifications:', error);
-        res.status(500).json({ message: 'Error sending notifications' });
-    }
-};
 
 exports.markReservationAsArrived = async (req, res) => {
     try {
-        const { reservationId } = req.query;
-        const reservation = await Reservation.findById(reservationId);
+        const { reservationId } = req.body || req.query; 
+
+        const reservation = await Reservation.findById(reservationId); 
 
         if (reservation) {
-            reservation.status = 'arrived'; 
+            reservation.status = 'arrived';
             await reservation.save();
+            console.log(`Reservation ${reservationId} confirmed.`);
+
+            stopCheckingReservations();
 
             res.status(200).json({ message: 'Reservation confirmed as arrived' });
-            res.send('<h1>Thank you! Your reservation has been marked as arrived.</h1>');
         } else {
             res.status(404).send('<h1>Reservation not found.</h1>');
         }
     } catch (error) {
         console.error('Error marking reservation as arrived:', error);
         res.status(500).send('<h1>Something went wrong. Please try again later.</h1>');
-        res.status(500).json({ message: 'Server error' });
     }
 };

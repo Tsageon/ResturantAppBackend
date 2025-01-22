@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Restaurant = require('./Resturant')
 
 const reservationSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -19,21 +20,31 @@ const reservationSchema = new mongoose.Schema({
             time: { type: Date }, 
             success: { type: Boolean, default: false }, 
         }],
-    status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'pending' },
+    status: { type: String, enum: ['pending', 'confirmed', 'cancelled', 'expired'], default: 'pending' },
     createdAt: { type: Date, default: Date.now },
 });
 
-reservationSchema.pre('save', function(next) {
-    let basePrice = 20;
+reservationSchema.pre('save', async function (next) {
+    if (this.isNew) {  
+        try {
 
-    if (this.tableType === 'vip') {
-        basePrice = 50;
-    } else if (this.tableType === 'outdoor') {
-        basePrice = 30;
+            const restaurant = await Restaurant.findById(this.restaurantId); 
+
+            let basePrice = restaurant.amount.standard;  
+
+            if (this.tableType === 'vip') {
+                basePrice = restaurant.amount.vip;
+            } else if (this.tableType === 'outdoor') {
+                basePrice = restaurant.amount.outdoor;
+            }
+
+            this.amount = basePrice * this.numberOfGuests;
+        } catch (error) {
+            console.error('Error fetching restaurant:', error);
+            return next(error); 
+        }
     }
-
-    this.amount = basePrice * this.numberOfGuests;
-
+    
     next(); 
 });
 

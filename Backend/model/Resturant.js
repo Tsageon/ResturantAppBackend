@@ -17,6 +17,11 @@ const restaurantSchema = new mongoose.Schema({
     },
     cuisine: { type: String, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
+    amount:{
+        vip: { type: Number, default: 50 },
+        outdoor: { type: Number, default: 30 },
+        standard: { type: Number, default: 20 },
+    },
     availableSlots: [{ startTime: Date,  endTime: Date,  
                        isAvailable: { type: Boolean, default: true },
                        status: { type: Boolean, default: true }}],

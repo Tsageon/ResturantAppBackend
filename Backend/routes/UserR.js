@@ -32,6 +32,8 @@ router.get('/reviews/:restaurantId', authMiddleware, reviewController.getReviews
 
 router.get('/restaurants/:restaurantsId', reviewController.getRestuarantDetails);
 
+router.post('/send-notification', authMiddleware, userController.sendNotifications);
+
 router.post('/store-device-token', authMiddleware, userController.Notification);
 
 router.post('/register', registerLimiter,userController.registerUser);
@@ -52,6 +54,6 @@ router.post('/subscribe', authMiddleware, userController.Subscribe);
 
 router.put('/edit', authMiddleware, userController.updateUser);
 
-router.delete('/delete-user/:id', userController.deleteUser)
+router.delete('/delete-user/:id', userController.deleteUser);
 
 module.exports = router;

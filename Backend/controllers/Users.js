@@ -2,15 +2,12 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const webPush = require('web-push');
-const { sendEmail } = require('./email')
+const { sendEmail } = require('./email');
 const User = require('../model/User');
 const Reservation = require('../model/Reservations');
 const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 
-const VapidKey = process.env.VAPID_PUBLIC_KEY
-const VapidPrivateKey = process.VAPID_PRIVATE_KEY
 
 exports.registerUser = async (req, res) => {
     const { email, password, phonenumber, fullname, role } = req.body;
@@ -382,6 +379,42 @@ exports.manualSendNotification = [
         }
     }
 ];
+
+exports.sendNotifications = async (req, res) => {
+    const { deviceToken, title, body, icon } = req.body;
+
+    try {
+        const payload = JSON.stringify({
+            title,
+            body,
+            icon,
+        });
+
+        if (deviceToken) {
+            const success = await sendPushNotification(deviceToken, title, body);
+            if (success) {
+                return res.status(200).json({ message: 'Notification sent successfully!' });
+            } else {
+                return res.status(500).json({ message: 'Notification failed!' });
+            }
+        } else {
+            const users = await User.find({ 'subscription.endpoint': { $exists: true } });
+
+            const promises = users.map(user =>
+                webPush.sendNotification(user.subscription, payload)
+                    .catch(error => console.error('Error sending notification to:', user.email, error))
+            );
+
+            await Promise.all(promises);
+
+            return res.status(200).json({ message: 'Notifications sent successfully!' });
+        }
+    } catch (error) {
+        console.error('Error sending notifications:', error);
+        res.status(500).json({ message: 'Error sending notifications' });
+    }
+};
+
 
 
 exports.Notification = async (req, res) => {

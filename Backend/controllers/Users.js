@@ -400,3 +400,23 @@ exports.Notification = async (req, res) => {
         console.error('Error storing token:', error);
         res.status(500).json({ message: 'Error storing token' });
     }};
+
+    exports.Subscribe = async (req, res) => {
+        const {email, subscription } = req.body;
+        try {
+       
+            const user = await User.findOne({ email });
+    
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+    
+            user.subscription = subscription;
+            await user.save();
+    
+            res.status(200).json({ message: 'Subscription saved successfully!' });
+        } catch (error) {
+            console.error('Error saving subscription:', error);
+            res.status(500).json({ message: 'Error saving subscription' });
+        }
+    }

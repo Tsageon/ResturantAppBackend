@@ -48,6 +48,8 @@ router.post('/manual-notification', userController.manualSendNotification);
 
 router.post('/reviews', authMiddleware, reviewController.createReview);
 
+router.post('/subscribe', userController.Subscribe);
+
 router.put('/edit', authMiddleware, userController.updateUser);
 
 router.delete('/delete-user/:id', userController.deleteUser)

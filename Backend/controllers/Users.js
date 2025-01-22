@@ -57,6 +57,9 @@ exports.loginUser = async (req, res) => {
 
     try {
         const user = await User.findOne({ email });
+        console.log('Received login request:', req.body);
+        console.log('Querying database for user:', req.body.email);
+
         if (!user) {
             return res.status(404).json({ message: 'User not found or you entered the wrong credentials' });
         }

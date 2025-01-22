@@ -1,15 +1,15 @@
 const express = require('express');
-const mongoose = require('mongoose'); 
-const moment = require('moment-timezone'); 
+const mongoose = require('mongoose');
+const moment = require('moment-timezone');
 const Reservation = require('../model/Reservations');
 const Restaurant = require('../model/Resturant');
-const paypalClient = require('../config/paypal'); 
+const paypalClient = require('../config/paypal');
 const authMiddleware = require('./Auth');
 const timezoneMiddleware = require('./TimeZ');
 const router = express.Router();
 
 router.get('/reservations', timezoneMiddleware, authMiddleware, async (req, res) => {
-    const { userId } = req; 
+    const { userId } = req;
 
     try {
         const reservations = await Reservation.find({ userId: userId })
@@ -29,12 +29,12 @@ router.get('/reservations', timezoneMiddleware, authMiddleware, async (req, res)
 
 router.get('/reservation/:id', timezoneMiddleware, authMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { userId } = req; 
+    const { userId } = req;
 
     try {
-        const reservation = await Reservation.findOne({ 
+        const reservation = await Reservation.findOne({
             _id: id,
-            userId: userId  
+            userId: userId
         }).populate('userId').populate('restaurantId');
 
         if (!reservation) {
@@ -50,9 +50,9 @@ router.get('/reservation/:id', timezoneMiddleware, authMiddleware, async (req, r
 
 
 router.post('/reservation', authMiddleware, async (req, res) => {
-    const { userId } = req;  
+    const { userId } = req;
     const { restaurantId, startTime, endTime, tableType, numberOfGuests, amount } = req.body;
-    
+
     console.log('Reservation request received:', { userId, restaurantId, startTime, endTime, tableType, numberOfGuests, amount });
 
     if (!restaurantId || !startTime || !endTime || !numberOfGuests || !amount) {
@@ -73,37 +73,49 @@ router.post('/reservation', authMiddleware, async (req, res) => {
         }
 
         console.log('Fetched restaurant details:', restaurant);
+        console.log('Raw startTime:', startTime);
+        console.log('Raw endTime:', endTime);
 
-        const requestedStartTimeUtc = new Date(startTime); 
-        const requestedEndTimeUtc = new Date(endTime); 
+        const fixDateFormat = (dateStr) => {
+            if (dateStr.length === 20 && dateStr.indexOf('.') === -1) {
+                return `${dateStr}.000Z`;
+            }
+            return dateStr;
+        };
+
+        const requestedStartTimeUtc = new Date(startTime);
+        const requestedEndTimeUtc = new Date(fixDateFormat(endTime));
+
+        console.log('Requested Start Time:', requestedStartTimeUtc);
+        console.log('Requested End Time:', requestedEndTimeUtc);
+
+        if (isNaN(requestedStartTimeUtc.getTime()) || isNaN(requestedEndTimeUtc.getTime())) {
+            console.log('Invalid date(s) provided:', { startTime, endTime });
+            return res.status(400).json({ message: 'Invalid date(s) provided' });
+        }
 
         const availableSlot = restaurant.availableSlots.find(slot => {
             const slotStartTimeUtc = new Date(slot.startTime);
             const slotEndTimeUtc = new Date(slot.endTime);
-            const requestedStartTimeUtc = new Date(startTime); 
-            const requestedEndTimeUtc = new Date(endTime);
-        
             console.log('Checking slot:', { slotStartTimeUtc, slotEndTimeUtc, slotStatus: slot.status });
             console.log('Requested times:', { requestedStartTimeUtc, requestedEndTimeUtc });
-        
-         
+
             return (
-                requestedStartTimeUtc >= slotStartTimeUtc && 
-                requestedEndTimeUtc <= slotEndTimeUtc && 
+                requestedStartTimeUtc >= slotStartTimeUtc &&
+                requestedEndTimeUtc <= slotEndTimeUtc &&
                 slot.status === true
             );
         });
-        
+
         if (!availableSlot) {
             console.log('No available slot found for the requested time range');
             return res.status(400).json({ message: 'The selected time slot is not available' });
         }
-        
 
         const newReservation = new Reservation({
-            userId,  
-            restaurantId, 
-            startTime: requestedStartTimeUtc, 
+            userId,
+            restaurantId,
+            startTime: requestedStartTimeUtc,
             endTime: requestedEndTimeUtc,
             tableType,
             numberOfGuests,
@@ -129,11 +141,12 @@ router.post('/reservation', authMiddleware, async (req, res) => {
 });
 
 
+
 router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { startTime, endTime, tableType, numberOfGuests } = req.body; 
+    const { startTime, endTime, tableType, numberOfGuests } = req.body;
 
-    if (!startTime || !endTime || !numberOfGuests) { 
+    if (!startTime || !endTime || !numberOfGuests) {
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -148,9 +161,9 @@ router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, r
         }
 
         const restaurant = await Restaurant.findById(reservation.restaurantId);
-        const availableSlot = restaurant.availableSlots.find(slot => 
+        const availableSlot = restaurant.availableSlots.find(slot =>
             new Date(slot.startTime).getTime() === new Date(startTime).getTime() &&
-            new Date(slot.endTime).getTime() === new Date(endTime).getTime() && 
+            new Date(slot.endTime).getTime() === new Date(endTime).getTime() &&
             slot.status === true
         );
 
@@ -163,9 +176,9 @@ router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, r
 
         reservation.startTime = convertedStartTime;
         reservation.endTime = convertedEndTime;
-        reservation.tableType = tableType; 
+        reservation.tableType = tableType;
         reservation.numberOfGuests = numberOfGuests;
-        reservation.status = 'pending'; 
+        reservation.status = 'pending';
 
         availableSlot.status = false;
 
@@ -184,16 +197,16 @@ router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, r
 
 router.post('/pay', authMiddleware, async (req, res) => {
     const { reservationId, amount } = req.body;
-    const { userId } = req;  
+    const { userId } = req;
 
     if (!mongoose.Types.ObjectId.isValid(reservationId)) {
         return res.status(400).json({ message: 'Invalid reservation ID' });
     }
 
     try {
-        const reservation = await Reservation.findOne({ 
+        const reservation = await Reservation.findOne({
             _id: reservationId,
-            userId: userId   
+            userId: userId
         });
 
         if (!reservation) {
@@ -222,7 +235,7 @@ router.post('/pay', authMiddleware, async (req, res) => {
                     currency: 'USD'
                 },
                 description: `Reservation Payment for ${reservationId}`,
-                custom: reservationId 
+                custom: reservationId
             }],
             redirect_urls: {
                 return_url: `${process.env.CLIENT_URL}/payment/success`,
@@ -265,8 +278,8 @@ router.get('/payment/success', async (req, res) => {
             const reservationId = payment.transactions[0].custom;
 
             const reservation = await Reservation.findByIdAndUpdate(
-                reservationId, 
-                { status: 'confirmed' }, 
+                reservationId,
+                { status: 'confirmed' },
                 { new: true }
             );
             console.log('Payment Successful:', payment);
@@ -284,7 +297,7 @@ router.get('/payment/cancel', async (req, res) => {
     try {
         const reservationId = req.query.reservationId;
         const reservation = await Reservation.findById(reservationId);
-        
+
         if (!reservation) {
             return res.status(404).json({ message: 'Reservation not found' });
         }
@@ -295,7 +308,7 @@ router.get('/payment/cancel', async (req, res) => {
         const restaurant = await Restaurant.findById(reservation.restaurantId);
         const slot = restaurant.availableSlots.find(slot => slot._id.toString() === reservation.slotId.toString());
         if (slot) {
-            slot.status = true; 
+            slot.status = true;
             await restaurant.save();
         }
 

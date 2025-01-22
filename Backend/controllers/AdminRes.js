@@ -367,21 +367,41 @@ exports.deleteRestaurant = [
     }
 ];
 
-exports.sendNotification = async (req, res) => {
-    const { deviceToken, title, body } = req.body;
+exports. sendNotifications = async (req, res) => {
+    const { deviceToken, title, body, icon } = req.body;
 
     try {
-        const success = await sendPushNotification(deviceToken, title, body);
-        if (success) {
-            res.status(200).json({ message: 'Notification sent successfully!' });
+        const payload = JSON.stringify({
+            title,
+            body,
+            icon,
+        });
+
+        if (deviceToken) {
+            const success = await sendPushNotification(deviceToken, title, body);
+            if (success) {
+                return res.status(200).json({ message: 'Notification sent successfully!' });
+            } else {
+                return res.status(500).json({ message: 'Notification failed!' });
+            }
         } else {
-            res.status(500).json({ message: 'Notification failed!' });
+            const users = await User.find({ 'subscription.endpoint': { $exists: true } });
+
+            const promises = users.map(user =>
+                webPush.sendNotification(user.subscription, payload)
+                    .catch(error => console.error('Error sending notification to:', user.email, error))
+            );
+
+            await Promise.all(promises);
+
+            return res.status(200).json({ message: 'Notifications sent successfully!' });
         }
     } catch (error) {
-        console.error('Error sending notification:', error);
-        res.status(500).json({ message: 'Error sending notification!' });
+        console.error('Error sending notifications:', error);
+        res.status(500).json({ message: 'Error sending notifications' });
     }
 };
+
 
 exports.Subscribe = async (req, res) => {
     const {email, subscription } = req.body;

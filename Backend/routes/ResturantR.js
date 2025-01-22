@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const timezoneMiddleware = require('../controllers/TimeZ');
-const { getRestaurants, getAllRestaurants, getRestaurantById,getNearbyRestaurants, searchRestaurants, addRestaurant, updateRestaurant, deleteRestaurant, markReservationAsArrived, sendNotification   } = require('../controllers/AdminRes');
+const { getRestaurants, getAllRestaurants, getRestaurantById,getNearbyRestaurants, searchRestaurants, addRestaurant, updateRestaurant, deleteRestaurant, markReservationAsArrived, sendNotifications   } = require('../controllers/AdminRes');
 
 router.get('/restaurants', getRestaurants);
 router.get('/nearbyR', getNearbyRestaurants);
@@ -10,7 +10,7 @@ router.get('/getR',timezoneMiddleware, getAllRestaurants);
 router.get('/getR/:id',timezoneMiddleware , getRestaurantById);
 router.get('/reservation-arrived', timezoneMiddleware, markReservationAsArrived );
 router.post('/addR', addRestaurant);
-router.post('/send-notification', sendNotification);
+router.post('/send-notification', sendNotifications);
 router.put('/:id', updateRestaurant);
 router.delete('/:id', deleteRestaurant);
 

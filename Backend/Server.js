@@ -22,17 +22,19 @@ app.use('/api/', userRoutes);
 app.use('/api/', resturantRoutes);
 app.use('/', paypalRoutes);
 
-app.use((req, res, next) => {
-    res.status(req.status || 500).json({
-        message: 'Internal Server Error',
+
+app.use((err, req, res, next) => {
+    res.status(req.status || 200).json({
+        message: 'Internal Server Error.something went wrong',
     })
+    console.error('Error stack trace:', err.stack);
+    res.status(err.status || 500).json({
+        message: 'Internal Server Error',
+        details: err.stack || err.message
+    });
     next();
 });
 
-app.use((err, req, res, next) => {
-    console.error('Error:', err.stack || err.message || err); 
-    res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
-});
 
 const PORT = 4000;
 app.listen(PORT, () => {

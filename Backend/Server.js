@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const connectDB = require('./config/database.js');
 const timezoneMiddleware = require('./controllers/TimeZ.js')
@@ -14,6 +15,7 @@ scheduleReminders();
 app.set('trust proxy', true);
 
 app.use(express.json());
+app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(timezoneMiddleware);
 app.use('/api/', userRoutes);
@@ -21,7 +23,6 @@ app.use('/api/', resturantRoutes);
 app.use('/', paypalRoutes);
 
 app.use((req, res, next) => {
-    console.log(`Client IP: ${req.ip}`);
     res.status(req.status || 500).json({
         message: 'Internal Server Error',
     })

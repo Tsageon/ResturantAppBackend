@@ -22,6 +22,9 @@ app.use('/', paypalRoutes);
 
 app.use((req, res, next) => {
     console.log(`Client IP: ${req.ip}`);
+    res.status(req.status || 500).json({
+        message: 'Internal Server Error',
+    })
     next();
 });
 

@@ -51,11 +51,11 @@ router.get('/reservation/:id', timezoneMiddleware, authMiddleware, async (req, r
 
 router.post('/reservation', authMiddleware, async (req, res) => {
     const { userId } = req;  
-    const { restaurantId, startTime, endTime, amount } = req.body;
+    const { restaurantId, startTime, endTime, tableType, numberOfGuests } = req.body;
     
-    console.log('Reservation request received:', { userId, restaurantId, startTime, endTime, amount });
+    console.log('Reservation request received:', { userId, restaurantId, startTime, endTime, tableType, numberOfGuests });
 
-    if (!restaurantId || !startTime || !endTime || !amount) {
+    if (!restaurantId || !startTime || !endTime || !numberOfGuests) {
         console.log('Validation Error: Missing required fields');
         return res.status(400).json({ message: 'Missing required fields' });
     }
@@ -103,7 +103,8 @@ router.post('/reservation', authMiddleware, async (req, res) => {
             restaurantId, 
             startTime: utcStartTime, 
             endTime: utcEndTime,
-            amount, 
+            tableType,
+            numberOfGuests,
             status: 'pending'
         });
 
@@ -112,7 +113,7 @@ router.post('/reservation', authMiddleware, async (req, res) => {
         await restaurant.save();
         console.log('Updated restaurant slots:', restaurant.availableSlots);
         await newReservation.save();
-        console.log('New reservation created:', newReservation);.0
+        console.log('New reservation created:', newReservation);
 
         res.status(201).json({
             message: 'Reservation created successfully',
@@ -124,11 +125,12 @@ router.post('/reservation', authMiddleware, async (req, res) => {
     }
 });
 
+
 router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { startTime, endTime, amount } = req.body;
+    const { startTime, endTime, tableType, numberOfGuests } = req.body; 
 
-    if (!startTime || !endTime || !amount) {
+    if (!startTime || !endTime || !numberOfGuests) { 
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -158,8 +160,9 @@ router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, r
 
         reservation.startTime = convertedStartTime;
         reservation.endTime = convertedEndTime;
-        reservation.amount = amount;
-        reservation.status = 'pending';
+        reservation.tableType = tableType; 
+        reservation.numberOfGuests = numberOfGuests;
+        reservation.status = 'pending'; 
 
         availableSlot.status = false;
 
@@ -175,7 +178,6 @@ router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, r
         res.status(500).json({ message: 'Failed to update reservation' });
     }
 });
-
 
 router.post('/pay', authMiddleware, async (req, res) => {
     const { reservationId, amount } = req.body;
@@ -239,6 +241,7 @@ router.post('/pay', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Payment initiation failed' });
     }
 });
+
 
 router.get('/payment/success', async (req, res) => {
     const { paymentId, PayerID } = req.query;

@@ -53,9 +53,9 @@ router.post('/reservation', authMiddleware, async (req, res) => {
     const { userId } = req;
     const { restaurantId, startTime, endTime, tableType, numberOfGuests, amount } = req.body;
 
-    console.log('Reservation request received:', { userId, restaurantId, startTime, endTime, tableType, numberOfGuests, amount });
+    console.log('Reservation request received:', { userId, restaurantId, startTime, endTime, tableType, numberOfGuests });
 
-    if (!restaurantId || !startTime || !endTime || !numberOfGuests || !amount) {
+    if (!restaurantId || !startTime || !endTime || !tableType || !numberOfGuests) {
         console.log('Validation Error: Missing required fields');
         return res.status(400).json({ message: 'Missing required fields' });
     }

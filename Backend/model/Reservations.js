@@ -8,13 +8,12 @@ const reservationSchema = new mongoose.Schema({
     endTime: { type: Date, required: true },
     tableType: {  type: String, 
         enum: ['regular', 'vip', 'outdoor'], 
-        default: 'regular', required: true 
+        default: 'regular',
     },
     amount: { 
         type: Number, 
-        required: true
     },
-    numberOfGuests: { type: Number, required: true },
+    numberOfGuests: { type: Number,  },
     notifications: [
         {
             time: { type: Date }, 

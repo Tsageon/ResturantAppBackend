@@ -397,16 +397,16 @@ exports.sendNotifications = async (req, res) => {
             const success = await sendPushNotification(deviceToken, title, body);
             if (success) {
                 return res.status(200).json({ message: 'Notification sent successfully!' });
+                
             } else {
                 return res.status(500).json({ message: 'Notification failed!' });
             }
         } else {
-            const users = await User.find({ 'subscription.endpoint': { $exists: true } });
+            const users = await User.find({ 'subscription.endpoint': { $exists: true }});
 
             const promises = users.map(user =>
                 webPush.sendNotification(user.subscription, payload)
-                    .catch(error => console.error('Error sending notification to:', user.email, error))
-            );
+                    .catch(error => console.error('Error sending notification to:', user.email, error)));
 
             await Promise.all(promises);
 
@@ -415,8 +415,7 @@ exports.sendNotifications = async (req, res) => {
     } catch (error) {
         console.error('Error sending notifications:', error);
         res.status(500).json({ message: 'Error sending notifications' });
-    }
-};
+    }};
 
 
 
@@ -432,12 +431,10 @@ exports.Notification = async (req, res) => {
         const user = await User.findByIdAndUpdate(
             userId, 
             { deviceToken: token }, 
-            { new: true }
-        );
+            { new: true });
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+            return res.status(404).json({ message: 'User not found' });}
 
         res.status(200).json({ message: 'Token stored successfully', user: user });
     } catch (error) {
@@ -462,5 +459,4 @@ exports.Subscribe = async (req, res) => {
         } catch (error) {
             console.error('Error saving subscription:', error);
             res.status(500).json({ message: 'Error saving subscription' });
-        }
-    }
+        }}

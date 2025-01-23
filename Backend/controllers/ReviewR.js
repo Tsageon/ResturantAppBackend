@@ -31,8 +31,7 @@ exports.getReviews = async (req, res) => {
     } catch (error) {
         console.error('Error fetching reviews:', error);
         res.status(500).json({ message: 'Failed to fetch reviews' });
-    }
-};
+    }};
 
 exports.createReview = [
     authMiddleware,
@@ -69,9 +68,7 @@ exports.createReview = [
         } catch (error) {
             console.error('Error creating review:', error);
             res.status(500).json({ message: 'Failed to create review' });
-        }
-    }
-];
+        }}];
 
 exports.getRestuarantDetails = async (req, res) => {
     const { restaurantId } = req.params;
@@ -94,5 +91,4 @@ exports.getRestuarantDetails = async (req, res) => {
     } catch (error) {
         console.error('Error fetching restaurant details', error);
         res.status(500).json({ message: 'Failed to fetch restaurant details' });
-    }
-}
+    }}

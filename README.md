@@ -9,8 +9,6 @@ This backend is built using **Node.js**, **Express.js**, **MongoDB**, **Paypal**
 - [Features](#features)
 - [Technologies Used](#technologies-used)
 - [Installation](#installation)
-- [Configuration](#configuration)
-- [API Endpoints](#api-endpoints)
 
 ## Features
 
@@ -45,13 +43,13 @@ Ensure that you have Node.js and npm installed. If not, you can install them fro
 git clone https://github.com/Tsageon/ResturantAppBackend.git
 cd ResturantAppBackend/Backend
 
-## 2. Install dependencies
+2. **Install dependencies**
 ```bash
 npm install
 
-## 3.Run The Server
-
-To start the application, run:
+3.**Run The Server**
+ 
+ run:
 ```bash
 node Server.js or
 npx nodemon Server.js
@@ -62,6 +60,7 @@ This will start the server on port 4000 (or the one you configured).
 
 PayPal: You will need to create a PayPal Developer account to obtain your Client ID and Secret for testing payments. Follow PayPal's documentation for setup or here https://developer.paypal.com/docs/checkout/.
 NodeMailer: Set up an email provider (e.g., Gmail, SendGrid) for sending emails and configure the SMTP settings in the .env file.
+
 
 ## Configuration
 
@@ -191,7 +190,7 @@ Should return this response you can verify by using getR:
   "message": "Restaurant deleted successfully"
 };
 
-###2. User Endpoints
+### 2. User Endpoints
 1. **GET** /api/users (Admins Only)
 Get's every user's app related info on the Database and nothing else.
 
@@ -301,27 +300,20 @@ The response shuld be;
     "message": "Manual notification sent to user@example.com"
 }
 or:
-{
-    "message": "Reservation not found"
-}
+{"message": "Reservation not found"}
 even:
-{
-    "message": "User not found"
-}
+{"message": "User not found"}
+
 finally:
-{
-    "message": "Failed to send manual notification"
-}
+{"message": "Failed to send manual notification"}
 
 10. POST /api/reviews
 Create a new review for a reservation.
 
 The request body should look like this:
-{
-  "restaurantId": "12345",
+{"restaurantId": "12345",
   "rating": 4,
-  "review": "Great food and service!"
-}
+  "review": "Great food and service!"}
 
 The response should be:
 201 Created with the review details and the reviewee's email oh and
@@ -331,16 +323,12 @@ only authenticated users can do this.
 Updates the logged-in user's profile.
 
 The Body should look like this:
-{
-  "fullname": "Johnny Doe Updated",
+{"fullname": "Johnny Doe Updated",
   "email": "phil.mcrakin.updated@example.com",
-  "phonenumber":"0987654321"
-}
+  "phonenumber":"0987654321"}
 
 The response should say:
-{
-"message":"user updated successfully"
-}
+{"message":"user updated successfully"}
 
 12. DELETE  /api/:id (Admins can delete anyone)
 Deletes a User by id.
@@ -350,26 +338,20 @@ If you're deleting the admin account, use the admin's ID.
 If you're deleting a user's own account, use their own id.
 
 The response should be:
-{
-  "message": "User account deleted successfully"
-}
+{"message": "User account deleted successfully"}
+
 or(If the user is trying to delete another account and is not an admin):
-{
-  "message": "Only admins can delete other Users"
-}
+{"message": "Only admins can delete other Users"}
+
 even (If the user with the provided id does not exist):
-{
-  "message": "User not found"
-}
+{"message": "User not found"}
 finally(server side issues):
-{
-  "message": "Something went wrong while deleting the user"
-}
+{"message": "Something went wrong while deleting the user"}
 
 ## Reservation Endpoints
 
-Now these endpoints don't utilize "/api" route just use "/" because I utilized
-turning a controller into with routes inside to save time.
+Now these endpoints don't utilize "/api" route just use "/" because
+turning a controller with routes functions inside to save time.(Now its fixed)
 
 1. GET /reservations
 Gets all reservations for the logged-in user.
@@ -402,9 +384,8 @@ Replace <reservationId> with a valid reservationId from a reservation that
 has been created and is pending.
 
 The responses:
-{
-  "message": "Reservation canceled and slot made available"
-}
+("message": "Reservation canceled and slot made available")
+
 If the reservation doesn't exist or any issue occurs, you will get a 404 or
 500 response with an appropriate error message
 Just double check using GetR
@@ -436,19 +417,21 @@ The responses:
 Pays for a reservation uses paypal. You have to be logged in and the reservation has to be pending.
 
 The body should look like this:
+
 {
   "reservationId": "reservationIdHere",
   "amount": 50
 }
 
 The response:
-{
-A redirect link will appear if clicked on will redirect to paypal where payment will be completed.
-}
+
+{ A redirect link will appear if clicked on will redirect to paypal where payment will be completed.}
 
 5. PUT /reservation/:id
 Updates a specific reservation by id also user specific.
+
 The body should be similar to this:
+
 {
   "startTime": "2025-01-10T13:00:00Z",
   "endTime": "2025-01-10T15:00:00Z",
@@ -461,8 +444,8 @@ The responses:
 404 Not Found: Reservation not found.
 
 ## Authorization Token
-To test endpoints requiring authentication (authMiddleware), log in or
-register a user using your authentication endpoint to get a JWT token.
+To test endpoints requiring authentication (authMiddleware), log in or register a user using your authentication endpoint to get 
+a JWT token.
 
 In Postman, go to the Authorization tab and select:
 Type: Bearer Token
@@ -475,9 +458,3 @@ Test the validations by sending incorrect or incomplete data, such as:
 Missing required fields (e.g., omit name or cuisine).
 Invalid availableSlots (e.g., overlapping slots, invalid date formats).
 Updating a restaurant with a non-existent id.
-
-## Tips for Easier Testing
-**1. Use Environment Variables:**
-In Postman, create variables for common values like the baseURL, port
-or token to avoid retyping them.
-Example: {{baseURL}}/restaurant

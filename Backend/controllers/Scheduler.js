@@ -62,7 +62,7 @@ const isNotificationSent = (reservation, interval) => {
 const retryNotification = async (reservation, interval, deviceToken, title, body) => {
     const retryInterval = 5 * 60 * 1000;
     const maxRetries = 3;
-
+   
     let retries = 0;
 
     const retryJob = schedule.scheduleJob(new Date(Date.now() + retryInterval), async function retry()  {
@@ -107,8 +107,7 @@ const updateSlotAvailability = async () => {
         console.log('Slot availability updated successfully');
     } catch (error) {
         console.error('Error updating slot availability:', error);
-    }
-};
+    }};
 
 
 cron.schedule('0 * * * *', () => {

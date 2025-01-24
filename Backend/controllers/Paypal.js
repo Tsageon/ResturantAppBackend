@@ -122,12 +122,12 @@ router.post('/reservation', authMiddleware, async (req, res) => {
             status: 'pending'
         });
 
+        await newReservation.save();
+        console.log('New reservation created:', newReservation);
+
         availableSlot.status = false;
         await restaurant.save();
         console.log('Updated restaurant slots:', restaurant.availableSlots);
-
-        await newReservation.save();
-        console.log('New reservation created:', newReservation);
 
         res.status(201).json({
             message: 'Reservation created successfully',
@@ -138,7 +138,6 @@ router.post('/reservation', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Failed to create reservation' });
     }
 });
-
 
 
 router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, res) => {

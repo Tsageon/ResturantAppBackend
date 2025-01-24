@@ -119,7 +119,6 @@ router.post('/reservation', authMiddleware, async (req, res) => {
             endTime: requestedEndTimeUtc,
             tableType,
             numberOfGuests,
-            amount,
             status: 'pending'
         });
 
@@ -150,9 +149,9 @@ router.put('/reservation/:id', authMiddleware, timezoneMiddleware, async (req, r
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    if (new Date(startTime) >= new Date(endTime)) {
-        return res.status(400).json({ message: 'Start time must be before end time' });
-    }
+    // if (new Date(startTime) >= new Date(endTime)) {
+    //     return res.status(400).json({ message: 'Start time must be before end time' });
+    // }
 
     try {
         const reservation = await Reservation.findById(id);

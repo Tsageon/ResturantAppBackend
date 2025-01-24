@@ -78,13 +78,13 @@ router.post('/reservation', authMiddleware, async (req, res) => {
 
         const fixDateFormat = (dateStr) => {
             if (dateStr.length === 20 && dateStr.indexOf('.') === -1) {
-                return `${dateStr}.000Z`;
+                return `${dateStr}.000Z`; 
             }
             return dateStr;
         };
-
-        const requestedStartTimeUtc = new Date(startTime);
-        const requestedEndTimeUtc = new Date(fixDateFormat(endTime));
+        
+        const requestedStartTimeUtc = new Date(fixDateFormat(startTime));
+        const requestedEndTimeUtc = new Date(fixDateFormat(endTime));        
 
         console.log('Requested Start Time:', requestedStartTimeUtc);
         console.log('Requested End Time:', requestedEndTimeUtc);

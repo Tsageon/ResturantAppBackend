@@ -73,8 +73,7 @@ router.post('/reservation', authMiddleware, async (req, res) => {
         }
 
         console.log('Fetched restaurant details:', restaurant);
-        console.log('Raw startTime:', startTime);
-        console.log('Raw endTime:', endTime);
+    
 
         const fixDateFormat = (dateStr) => {
             if (dateStr.length === 20 && dateStr.indexOf('.') === -1) {

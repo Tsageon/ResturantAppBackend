@@ -60,12 +60,12 @@ const isNotificationSent = (reservation, interval) => {
 
 
 const retryNotification = async (reservation, interval, deviceToken, title, body) => {
-    const retryInterval = 5 * 60 * 1000;
+    const retryInterval = interval || 5 * 60 * 1000;    
     const maxRetries = 3;
-   
+
     let retries = 0;
 
-    const retryJob = schedule.scheduleJob(new Date(Date.now() + retryInterval), async function retry()  {
+    const retryJob = schedule.scheduleJob(new Date(Date.now() + retryInterval), async function retry() {
         if (retries >= maxRetries) {
             console.error('Max retries reached for reservation:', reservation._id);
             retryJob.cancel();
@@ -86,10 +86,11 @@ const retryNotification = async (reservation, interval, deviceToken, title, body
             }
         } catch (error) {
             console.error('Error during notification retry:', error);
-            retries++
+            retries++;
         }
     });
 };
+
 
 const updateSlotAvailability = async () => {
     try {

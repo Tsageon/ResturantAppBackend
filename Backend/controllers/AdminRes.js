@@ -6,7 +6,7 @@ const adminCheck = require('../controllers/Admin');
 const authMiddleware = require('../controllers/Auth');
 const timezoneMiddleware = require('./TimeZ');
 
-exports.getRestaurants = async (req, res) => {
+exports.getRestaurants = async (res) => {
     try {
         const restaurants = await Restaurant.find({}, { name: 1, address: 1, location: 1 });
         res.status(200).json(restaurants);
@@ -88,24 +88,17 @@ exports.getAllRestaurants = async (req, res) => {
 
         const formattedRestaurants = restaurants.map(restaurant => {
             const originalCreatedAt = restaurant.createdAt;
-            console.log('UTC createdAt:', originalCreatedAt);
 
             restaurant.createdAt = moment(originalCreatedAt).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
-            console.log('Converted time:', restaurant.createdAt);
         
             restaurant.availableSlots.forEach(slot => {
                 if (slot.startTime) {
                     const originalStartTime = slot.startTime;  
-                    console.log('Original startTime (UTC):', originalStartTime);
- 
                     slot.startTime = moment(originalStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
-                    console.log("Converted startTime:", slot.startTime); 
                 }
                 if (slot.endTime) {
                     const originalEndTime = slot.endTime;
-                    console.log('Original endTime (UTC):', originalEndTime); 
-                    slot.endTime = moment(originalEndTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
-                    console.log("Converted endTime:", slot.endTime); 
+                    slot.endTime = moment(originalEndTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss Z'); 
                 }
             });
         
@@ -134,10 +127,8 @@ exports.getRestaurantById = [
             console.log('Using timezone:', timezone);
 
             const utcCreatedAt = moment.utc(restaurant.createdAt);
-            console.log('UTC createdAt:', utcCreatedAt.format()); 
 
             const convertedCreatedAt = utcCreatedAt.tz(timezone);
-            console.log('Converted createdAt:', convertedCreatedAt.format()); 
             restaurant.createdAt = convertedCreatedAt.format('YYYY-MM-DD HH:mm:ss Z'); 
 
            
@@ -146,16 +137,12 @@ exports.getRestaurantById = [
 
                 if (slot.startTime) {
                     const utcStartTime = moment.utc(slot.startTime);
-                    console.log('Original startTime (UTC):', utcStartTime.format()); 
                     updatedSlot.startTime = utcStartTime.tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
-                    console.log('Converted startTime:', updatedSlot.startTime); 
                 }
 
                 if (slot.endTime) {
                     const utcEndTime = moment.utc(slot.endTime);
-                    console.log('Original endTime (UTC):', utcEndTime.format()); 
-                    updatedSlot.endTime = utcEndTime.tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');
-                    console.log('Converted endTime:', updatedSlot.endTime);
+                    updatedSlot.endTime = utcEndTime.tz(timezone).format('YYYY-MM-DD HH:mm:ss Z');    
                 }
 
                 return updatedSlot;
